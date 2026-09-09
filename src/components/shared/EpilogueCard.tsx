@@ -10,13 +10,13 @@ export default function EpilogueCard({ icon: Icon, title, shortDescription, more
   const panelId = `epilogue-info-${title}`;
 
   return (
-    <div className="rounded-2xl border-2 border-mist-200 bg-white p-5 shadow-card sm:p-6">
-      <div className="flex items-start gap-3 sm:gap-4">
+    <div className="rounded-2xl border-2 border-mist-200 bg-white p-3.5 shadow-card sm:p-4">
+      <div className="flex items-start gap-2.5 sm:gap-3">
         <span
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-mist-100 text-deep sm:h-11 sm:w-11"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mist-100 text-deep sm:h-10 sm:w-10"
           aria-hidden="true"
         >
-          <Icon className="h-5 w-5" strokeWidth={2} />
+          <Icon className="h-[18px] w-[18px]" strokeWidth={2} />
         </span>
 
         <div className="min-w-0 flex-1">
@@ -30,7 +30,7 @@ export default function EpilogueCard({ icon: Icon, title, shortDescription, more
             onClick={() => setExpanded((v) => !v)}
             aria-expanded={expanded}
             aria-controls={panelId}
-            className="mt-2.5 inline-flex items-center gap-1 text-sm font-medium text-teal-700 transition-colors hover:text-teal-800"
+            className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-teal-700 transition-colors hover:text-teal-800"
           >
             <ChevronDown
               className={`h-4 w-4 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}

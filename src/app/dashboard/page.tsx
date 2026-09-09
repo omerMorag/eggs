@@ -104,7 +104,7 @@ export default function DashboardPage() {
               setRowRef={setRowRef}
             />
 
-            <div className="mt-6 flex flex-col gap-4 sm:mt-8">
+            <div className="mt-4 flex flex-col gap-2.5 sm:mt-6 sm:gap-3">
               {epilogueItems.map((item) => (
                 <EpilogueCard key={item.title} {...item} />
               ))}

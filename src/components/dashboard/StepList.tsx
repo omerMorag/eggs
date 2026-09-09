@@ -39,11 +39,11 @@ export default function StepList({
   );
 
   return (
-    <ol className="flex flex-col gap-3 sm:gap-4">
+    <ol className="flex flex-col gap-2.5 sm:gap-3">
       {parallelGroup.length > 1 ? (
         <li>
           <div className="flex items-stretch gap-2 sm:gap-3">
-            <ol className="flex min-w-0 flex-1 flex-col gap-3 sm:gap-4">
+            <ol className="flex min-w-0 flex-1 flex-col gap-2.5 sm:gap-3">
               {parallelGroup.map((step) => renderRow(step, true))}
             </ol>
 
