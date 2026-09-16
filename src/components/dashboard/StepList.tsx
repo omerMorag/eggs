@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { journeySteps } from "@/data/steps";
 import StepRow from "./StepRow";
 
@@ -10,6 +11,8 @@ interface StepListProps {
   onToggleDone: (id: number) => void;
   onToggleExpand: (id: number) => void;
   setRowRef: (id: number, el: HTMLLIElement | null) => void;
+  /** תוכן אופציונלי שמוצג בתוך הרשימה מיד אחרי קבוצת השלבים המקבילים הראשונה (למשל כרטיס "חוסכות זמן") */
+  afterFirstGroup?: ReactNode;
 }
 
 export default function StepList({
@@ -18,6 +21,7 @@ export default function StepList({
   onToggleDone,
   onToggleExpand,
   setRowRef,
+  afterFirstGroup,
 }: StepListProps) {
   // הצעד הראשון שאינו "אפשר במקביל" קובע היכן מסתיימת קבוצת השלבים
   // שאפשר להתקדם בהם זו לצד זו (כרגע שלבים 1–3).
@@ -61,6 +65,12 @@ export default function StepList({
         </li>
       ) : (
         parallelGroup.map((step) => renderRow(step))
+      )}
+
+      {afterFirstGroup && (
+        <li className="no-print" aria-hidden={false}>
+          {afterFirstGroup}
+        </li>
       )}
 
       {restSteps.map((step) => renderRow(step))}

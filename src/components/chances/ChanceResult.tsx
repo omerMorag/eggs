@@ -31,7 +31,7 @@ export default function ChanceResult({ age, eggs, familyGoal }: ChanceResultProp
               cy="75"
               r={RADIUS}
               fill="none"
-              stroke="#EFE1D7"
+              stroke="#EEDDD6"
               strokeWidth={STROKE}
             />
             <circle
@@ -39,7 +39,7 @@ export default function ChanceResult({ age, eggs, familyGoal }: ChanceResultProp
               cy="75"
               r={RADIUS}
               fill="none"
-              stroke="#E25068"
+              stroke="#C13655"
               strokeWidth={STROKE}
               strokeLinecap="round"
               strokeDasharray={CIRCUMFERENCE}

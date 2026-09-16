@@ -87,10 +87,10 @@ export default function ChanceChart({ age, eggs, familyGoal }: ChanceChartProps)
                 x2={WIDTH - PADDING_RIGHT}
                 y1={yForPercent(t)}
                 y2={yForPercent(t)}
-                stroke="#EFE1D7"
+                stroke="#EEDDD6"
                 strokeWidth={1}
               />
-              <text x={PADDING_LEFT - 8} y={yForPercent(t) + 4} textAnchor="end" fontSize="11" fill="#433632" opacity={0.5}>
+              <text x={PADDING_LEFT - 8} y={yForPercent(t) + 4} textAnchor="end" fontSize="11" fill="#241619" opacity={0.5}>
                 {t}%
               </text>
             </g>
@@ -103,7 +103,7 @@ export default function ChanceChart({ age, eggs, familyGoal }: ChanceChartProps)
               y={HEIGHT - PADDING_BOTTOM + 20}
               textAnchor="middle"
               fontSize="11"
-              fill="#433632"
+              fill="#241619"
               opacity={0.5}
             >
               {t}
@@ -114,14 +114,14 @@ export default function ChanceChart({ age, eggs, familyGoal }: ChanceChartProps)
             y={HEIGHT - 4}
             textAnchor="middle"
             fontSize="11"
-            fill="#433632"
+            fill="#241619"
             opacity={0.4}
           >
             מספר ביציות בשלות
           </text>
 
           {/* קו ההערכה */}
-          <path d={path} fill="none" stroke="#E25068" strokeWidth={2.5} strokeLinecap="round" />
+          <path d={path} fill="none" stroke="#C13655" strokeWidth={2.5} strokeLinecap="round" />
 
           {/* קו אנכי + נקודה בהתאם למספר שהוזן/שמעוקבים אחריו */}
           <line
@@ -129,7 +129,7 @@ export default function ChanceChart({ age, eggs, familyGoal }: ChanceChartProps)
             x2={xForEggs(activeEggs)}
             y1={PADDING_TOP}
             y2={HEIGHT - PADDING_BOTTOM}
-            stroke="#CC334D"
+            stroke="#C13655"
             strokeWidth={1}
             strokeDasharray="4 4"
             opacity={0.5}
@@ -138,7 +138,7 @@ export default function ChanceChart({ age, eggs, familyGoal }: ChanceChartProps)
             cx={xForEggs(activeEggs)}
             cy={yForPercent(activePercent)}
             r={6}
-            fill="#E25068"
+            fill="#C13655"
             stroke="white"
             strokeWidth={2}
           />

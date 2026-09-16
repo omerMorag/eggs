@@ -16,7 +16,7 @@ const DEFAULT_EGGS = 15;
 
 function pillClass(active: boolean) {
   return `rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200 ${
-    active ? "bg-teal-600 text-white shadow-sm" : "bg-mist-100 text-ink/60 hover:bg-mist-200"
+    active ? "bg-teal-600 text-ink shadow-sm" : "bg-mist-100 text-ink/60 hover:bg-mist-200"
   }`;
 }
 
@@ -120,7 +120,7 @@ export default function ChanceCalculator() {
           <button
             type="button"
             onClick={() => setHasCalculated(true)}
-            className="inline-flex items-center gap-2 rounded-full bg-teal-600 px-8 py-3.5 text-sm font-bold tracking-wide text-white shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:bg-teal-700 hover:shadow-cardHover active:translate-y-0"
+            className="inline-flex items-center gap-2 rounded-full bg-teal-600 px-8 py-3.5 text-sm font-bold tracking-wide text-ink shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:bg-teal-500 hover:shadow-cardHover active:translate-y-0"
           >
             הציגי לי את ההערכה
           </button>

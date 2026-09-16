@@ -28,7 +28,14 @@ export default function TestsSection({ progress }: TestsSectionProps) {
       </section>
 
       <section className="mt-6 sm:mt-8">
-        <TestChecklist completedTests={progress.completedTests} onToggle={progress.toggleTest} />
+        <TestChecklist
+          completedTests={progress.completedTests}
+          onToggle={progress.toggleTest}
+          completedTestSubItems={progress.completedTestSubItems}
+          onToggleSubItem={progress.toggleTestSubItem}
+          testDates={progress.testDates}
+          onUpdateDate={progress.updateTestDate}
+        />
       </section>
     </div>
   );

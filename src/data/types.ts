@@ -25,6 +25,8 @@ export interface TestItem {
   icon: LucideIcon;
   title: string;
   detail: string;
+  /** מיני-צ'קליסט של הרכיבים בתוך הבדיקה (למשל ההורמונים הנבדקים) — ניתן לסמן כל אחד בנפרד */
+  subItems?: string[];
 }
 
 /** כרטיס מידע נוסף שאינו שלב פעיל (לדוגמה: מה קורה אחרי השאיבה) */

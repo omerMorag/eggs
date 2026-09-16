@@ -16,7 +16,7 @@ export default function ResetButton({ onReset }: { onReset: () => void }) {
             onReset();
             setConfirming(false);
           }}
-          className="inline-flex items-center gap-1 rounded-full bg-warm-500 px-2.5 py-1 font-semibold text-white transition-colors hover:bg-warm-500/90"
+          className="inline-flex items-center gap-1 rounded-full bg-warm-500 px-2.5 py-1 font-semibold text-ink transition-colors hover:bg-warm-500/80"
         >
           <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
           כן, אפסי

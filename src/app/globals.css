@@ -7,15 +7,15 @@ html {
 }
 
 body {
-  color: #433632;
-  background-color: #fffefd;
-  background-image: radial-gradient(circle at 100% 0%, rgba(226, 80, 104, 0.06), transparent 45%),
-    radial-gradient(circle at 0% 15%, rgba(79, 199, 154, 0.05), transparent 40%);
+  color: #241619;
+  background-color: #fcf8f7;
+  background-image: radial-gradient(circle at 100% 0%, rgba(226, 80, 104, 0.10), transparent 45%),
+    radial-gradient(circle at 0% 15%, rgba(234, 143, 83, 0.08), transparent 40%);
 }
 
 ::selection {
-  background-color: #fdb9c5;
-  color: #6f2531;
+  background-color: #f6c7cf;
+  color: #762a36;
 }
 
 /* פס גלילה עדין ומודרני */
@@ -27,12 +27,12 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background-color: #dcc9bc;
+  background-color: #e8d2c8;
   border-radius: 999px;
-  border: 2px solid #fffefd;
+  border: 2px solid #fcf8f7;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #f994a5;
+  background-color: #ea7e8f;
 }
 
 /* אזור פוקוס נגיש וברור לכל אלמנט בר-לחיצה */
@@ -40,7 +40,7 @@ a:focus-visible,
 button:focus-visible,
 [tabindex]:focus-visible,
 input:focus-visible {
-  outline: 2px solid #e25068;
+  outline: 2px solid #c13655;
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -53,7 +53,7 @@ input:focus-visible {
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.14em;
-  color: #cc334d;
+  color: #c13655;
 }
 
 @media print {

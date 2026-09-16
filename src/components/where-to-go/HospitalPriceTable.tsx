@@ -15,7 +15,7 @@ const STATUS_OPTIONS = [
 function pillClass(active: boolean) {
   return `rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ${
     active
-      ? "bg-teal-600 text-white shadow-sm"
+      ? "bg-teal-600 text-ink shadow-sm"
       : "bg-mist-100 text-ink/60 hover:bg-mist-200"
   }`;
 }
