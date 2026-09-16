@@ -5,7 +5,8 @@ import StepRow from "./StepRow";
 
 interface StepListProps {
   completedSteps: Set<number>;
-  expandedSteps: Set<number>;
+  /** מזהה השלב הפתוח כרגע, או null אם אף שלב לא פתוח — רק שלב אחד פתוח בכל רגע */
+  openStepId: number | null;
   onToggleDone: (id: number) => void;
   onToggleExpand: (id: number) => void;
   setRowRef: (id: number, el: HTMLLIElement | null) => void;
@@ -13,7 +14,7 @@ interface StepListProps {
 
 export default function StepList({
   completedSteps,
-  expandedSteps,
+  openStepId,
   onToggleDone,
   onToggleExpand,
   setRowRef,
@@ -30,7 +31,7 @@ export default function StepList({
       key={step.id}
       step={step}
       isDone={completedSteps.has(step.id)}
-      isExpanded={expandedSteps.has(step.id)}
+      isExpanded={openStepId === step.id}
       onToggleDone={onToggleDone}
       onToggleExpand={onToggleExpand}
       setRowRef={setRowRef}
