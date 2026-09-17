@@ -14,6 +14,7 @@ import HealthFundTable from "@/components/where-to-go/HealthFundTable";
 import HospitalPriceTable from "@/components/where-to-go/HospitalPriceTable";
 import PrivateCostTable from "@/components/where-to-go/PrivateCostTable";
 import SectionHeading from "@/components/dashboard/SectionHeading";
+import HenIllustration from "@/components/hens/HenIllustration";
 
 /**
  * "איפה כדאי לעשות?" — כל התוכן שהיה בעמוד /where-to-go, מאורגן סביב
@@ -26,23 +27,30 @@ export default function WhereToGoSection() {
   return (
     <div className="print-stack animate-fadeUp">
       {/* כותרת */}
-      <section>
-        <h1 className="font-sans text-2xl font-extrabold leading-tight tracking-tight text-ink sm:text-3xl">
-          איפה כדאי להקפיא ביציות – וכמה זה באמת עולה?
-        </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink/70 sm:text-base">
-          אין מקום אחד שמתאים לכולן. אפשר לעבור את התהליך בבית חולים ציבורי, דרך הסדר של
-          הביטוח המשלים או במסלול פרטי עם רופא/ה שבחרת.
-        </p>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink/70">
-          לפני שאת משווה מחירים, חשוב להבין באיזה מסלול את זכאית לעבור את התהליך, מה כל
-          מחיר כולל ואילו הוצאות נוספות עשויות להתווסף. לפעמים מחיר שנראה זול אינו כולל
-          תרופות, פגישת ייעוץ או אחסון, ולעומת זאת מחיר גבוה יותר עשוי לכלול ליווי רפואי
-          ואחסון למספר שנים.
-        </p>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink/60">
-          בחרי למטה את המסלול שהכי מתאים לך כדי לראות את המידע הרלוונטי.
-        </p>
+      <section className="lg:flex lg:items-center lg:justify-between lg:gap-8">
+        <div className="min-w-0">
+          <h1 className="font-sans text-2xl font-extrabold leading-tight tracking-tight text-ink sm:text-3xl">
+            איפה כדאי להקפיא ביציות – וכמה זה באמת עולה?
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink/70 sm:text-base">
+            אין מקום אחד שמתאים לכולן. אפשר לעבור את התהליך בבית חולים ציבורי, דרך הסדר של
+            הביטוח המשלים או במסלול פרטי עם רופא/ה שבחרת.
+          </p>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink/70">
+            לפני שאת משווה מחירים, חשוב להבין באיזה מסלול את זכאית לעבור את התהליך, מה כל
+            מחיר כולל ואילו הוצאות נוספות עשויות להתווסף. לפעמים מחיר שנראה זול אינו כולל
+            תרופות, פגישת ייעוץ או אחסון, ולעומת זאת מחיר גבוה יותר עשוי לכלול ליווי רפואי
+            ואחסון למספר שנים.
+          </p>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink/60">
+            בחרי למטה את המסלול שהכי מתאים לך כדי לראות את המידע הרלוונטי.
+          </p>
+        </div>
+
+        {/* התרנגולת עם המפה וזכוכית המגדלת — במובייל אחרי הכותרת, בדסקטופ מהצד הנגדי */}
+        <div className="mt-4 flex justify-center lg:mt-0 lg:shrink-0 lg:justify-end">
+          <HenIllustration name="choose-clinic" blob="cream" />
+        </div>
       </section>
 
       {/* בורר ארבעת המסלולים */}

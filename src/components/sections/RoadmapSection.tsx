@@ -7,7 +7,7 @@ import { journeySteps } from "@/data/steps";
 import StepList from "@/components/dashboard/StepList";
 import PrintButton from "@/components/dashboard/PrintButton";
 import ResetButton from "@/components/dashboard/ResetButton";
-import LineArtBloom from "@/components/LineArtBloom";
+import HenIllustration from "@/components/hens/HenIllustration";
 import IntroCard from "./IntroCard";
 
 interface RoadmapSectionProps {
@@ -68,56 +68,59 @@ export default function RoadmapSection({ progress, openStepId, onOpenStep }: Roa
 
       {/* כרטיס "השלב הבא שלך" */}
       <section className="relative mt-5 animate-fadeUp overflow-hidden rounded-2xl border-2 border-warm-300/60 bg-warm-100/50 p-5 shadow-card sm:mt-6 sm:p-6">
-        {/* איור הפרח העדין שהיה בעמוד הבית הקודם — נשמר באותם צבעים וגוונים קיימים, כאן כנגיעת צבע בפינה הריקה של הכרטיס */}
-        <LineArtBloom
-          className="pointer-events-none absolute -top-10 -left-10 hidden h-48 w-40 rotate-[18deg] text-warm-500/45 sm:block lg:h-60 lg:w-48"
-          aria-hidden="true"
-        />
-
-        <div className="relative z-10">
-          {allStepsCompleted ? (
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-warm-500 shadow-sm ring-1 ring-warm-300/50">
-                <PartyPopper className="h-5 w-5" strokeWidth={2} />
-              </span>
-              <div>
-                <h2 className="font-sans text-base font-bold tracking-tight text-ink sm:text-lg">
-                  כל השלבים סומנו כהושלמו!
-                </h2>
-                <p className="mt-0.5 text-sm leading-relaxed text-ink/60">
-                  כל הכבוד — אפשר לעקוב אחרי הבדיקות והמידע הנוסף בתפריט הצד.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-3">
+        <div className="relative z-10 lg:flex lg:items-center lg:justify-between lg:gap-6">
+          <div className="min-w-0 flex-1">
+            {allStepsCompleted ? (
+              <div className="flex items-center gap-3">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-warm-500 shadow-sm ring-1 ring-warm-300/50">
-                  {nextStep ? <nextStep.icon className="h-5 w-5" strokeWidth={2} /> : null}
+                  <PartyPopper className="h-5 w-5" strokeWidth={2} />
                 </span>
                 <div>
-                  <p className="text-xs font-semibold text-ink/50">השלב הבא שלך</p>
-                  <h2 className="mt-0.5 font-sans text-base font-bold tracking-tight text-ink sm:text-lg">
-                    {nextStep?.title}
+                  <h2 className="font-sans text-base font-bold tracking-tight text-ink sm:text-lg">
+                    כל השלבים סומנו כהושלמו!
                   </h2>
-                  <p className="mt-1 max-w-md text-sm leading-relaxed text-ink/65">
-                    {nextStep?.shortDescription}
+                  <p className="mt-0.5 text-sm leading-relaxed text-ink/60">
+                    כל הכבוד — אפשר לעקוב אחרי הבדיקות והמידע הנוסף בתפריט הצד.
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => nextStep && openStepAndScroll(nextStep.id)}
-                className="group inline-flex shrink-0 items-center gap-1.5 self-start rounded-full bg-white px-4 py-2.5 text-sm font-bold text-teal-700 shadow-sm ring-1 ring-warm-300/50 transition-colors hover:bg-teal-50 sm:self-center"
-              >
-                פתחי את השלב
-                <ArrowLeft
-                  className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1"
-                  strokeWidth={2.5}
-                />
-              </button>
-            </div>
-          )}
+            ) : (
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-warm-500 shadow-sm ring-1 ring-warm-300/50">
+                    {nextStep ? <nextStep.icon className="h-5 w-5" strokeWidth={2} /> : null}
+                  </span>
+                  <div>
+                    <p className="text-xs font-semibold text-ink/50">השלב הבא שלך</p>
+                    <h2 className="mt-0.5 font-sans text-base font-bold tracking-tight text-ink sm:text-lg">
+                      {nextStep?.title}
+                    </h2>
+                    <p className="mt-1 max-w-md text-sm leading-relaxed text-ink/65">
+                      {nextStep?.shortDescription}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => nextStep && openStepAndScroll(nextStep.id)}
+                  className="group inline-flex shrink-0 items-center gap-1.5 self-start rounded-full bg-white px-4 py-2.5 text-sm font-bold text-teal-700 shadow-sm ring-1 ring-warm-300/50 transition-colors hover:bg-teal-50 sm:self-center"
+                >
+                  פתחי את השלב
+                  <ArrowLeft
+                    className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1"
+                    strokeWidth={2.5}
+                  />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* התרנגולת עם מפת המסלול — מחליפה את איור הפרח העדין שהיה כאן; מלווה
+              את תחושת ההתקדמות, לא מסמנת סיום (זו שמורה לתרנגולת עם הגביע,
+              שתתווסף בעתיד רק אחרי שלב השאיבה) */}
+          <div className="mt-4 flex justify-center lg:mt-0 lg:shrink-0 lg:justify-end">
+            <HenIllustration name="roadmap" sizeClassName="w-36 sm:w-40 lg:w-56" />
+          </div>
         </div>
       </section>
 
@@ -157,6 +160,22 @@ export default function RoadmapSection({ progress, openStepId, onOpenStep }: Roa
           onToggleDone={progress.toggleStep}
           onToggleExpand={toggleExpand}
           setRowRef={setRowRef}
+          renderAfterStep={(stepId) =>
+            stepId === 4 ? (
+              <div className="flex items-center gap-3 rounded-2xl border-2 border-teal-200 bg-teal-50/50 p-3.5 sm:gap-4 sm:p-4">
+                <HenIllustration
+                  name="consultation"
+                  blob="pink"
+                  sizeClassName="w-20 sm:w-24 lg:w-32"
+                  className="shrink-0"
+                />
+                <p className="text-sm leading-relaxed text-ink/70">
+                  לקראת הפגישה, כדאי לרכז מראש את השאלות שחשוב לך לשאול — יש כמה דוגמאות
+                  ב״מידע נוסף״ של השלב הזה.
+                </p>
+              </div>
+            ) : null
+          }
         />
       </section>
     </div>

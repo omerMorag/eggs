@@ -7,6 +7,7 @@ import CostEstimatorResultCard from "@/components/cost-estimator/CostEstimatorRe
 import SavedEstimatesList from "@/components/cost-estimator/SavedEstimatesList";
 import WizardActions from "@/components/cost-estimator/WizardActions";
 import DisclaimerNote from "@/components/shared/DisclaimerNote";
+import HenIllustration from "@/components/hens/HenIllustration";
 import Step1TreatmentTrack from "@/components/cost-estimator/steps/Step1TreatmentTrack";
 import Step2HealthFund from "@/components/cost-estimator/steps/Step2HealthFund";
 import Step3CycleCount from "@/components/cost-estimator/steps/Step3CycleCount";
@@ -38,14 +39,21 @@ export default function CostEstimatorSection() {
 
   return (
     <div className="print-stack animate-fadeUp">
-      <section>
-        <h1 className="font-sans text-2xl font-extrabold leading-tight tracking-tight text-ink sm:text-3xl">
-          כמה התהליך עשוי לעלות לי?
-        </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink/70 sm:text-base">
-          עני על כמה שאלות ונבנה לך הערכת עלות מסודרת. המחירים משתנים בין קופות, מרפאות
-          ופרוטוקולים — לכן התוצאה היא הערכה בלבד.
-        </p>
+      <section className="lg:flex lg:items-center lg:justify-between lg:gap-8">
+        <div className="min-w-0">
+          <h1 className="font-sans text-2xl font-extrabold leading-tight tracking-tight text-ink sm:text-3xl">
+            כמה התהליך עשוי לעלות לי?
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink/70 sm:text-base">
+            עני על כמה שאלות ונבנה לך הערכת עלות מסודרת. המחירים משתנים בין קופות, מרפאות
+            ופרוטוקולים — לכן התוצאה היא הערכה בלבד.
+          </p>
+        </div>
+
+        {/* התרנגולת עם המחשבון והארנק — במובייל אחרי הכותרת, בדסקטופ מהצד הנגדי */}
+        <div className="no-print mt-4 flex justify-center lg:mt-0 lg:shrink-0 lg:justify-end">
+          <HenIllustration name="costs" blob="mint" />
+        </div>
       </section>
 
       <section className="mt-6 sm:mt-8">

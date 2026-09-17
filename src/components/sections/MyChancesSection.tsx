@@ -9,6 +9,7 @@ import KeyFactsGrid from "@/components/chances/KeyFactsGrid";
 import ChanceSupportCard from "@/components/chances/ChanceSupportCard";
 import ChanceFaq from "@/components/chances/ChanceFaq";
 import { chanceSources } from "@/data/chanceContent";
+import HenIllustration from "@/components/hens/HenIllustration";
 
 /**
  * "מה הסיכוי שלי?" — זוקק לפי בקשת המשתמשת (ראו site-build-summary.md
@@ -44,10 +45,19 @@ export default function MyChancesSection() {
 
       {/* 4. טבלת "אותו מספר ביציות – גיל שונה" */}
       <section className="mt-10 sm:mt-14">
-        <SectionHeading icon={BarChart3} title="אותו מספר ביציות – גיל שונה" />
-        <p className="mb-4 text-sm leading-relaxed text-ink/70 sm:text-[15px]">
-          הטבלה ממחישה בקצרה עד כמה הגיל בזמן ההקפאה משפיע על ההערכה.
-        </p>
+        <div className="lg:flex lg:items-center lg:justify-between lg:gap-8">
+          <div className="min-w-0 flex-1">
+            <SectionHeading icon={BarChart3} title="אותו מספר ביציות – גיל שונה" />
+            <p className="mb-4 text-sm leading-relaxed text-ink/70 sm:text-[15px]">
+              הטבלה ממחישה בקצרה עד כמה הגיל בזמן ההקפאה משפיע על ההערכה.
+            </p>
+          </div>
+
+          {/* התרנגולת עם הגרף העולה — לצד הכותרת, לא בתוך הטבלה עצמה (הטבלה עם הנתונים האמיתיים נשארת ללא שינוי) */}
+          <div className="mb-4 flex justify-center lg:mb-0 lg:shrink-0 lg:justify-end">
+            <HenIllustration name="statistics" blob="mint" />
+          </div>
+        </div>
         <IllustrativeAgeTable />
       </section>
 

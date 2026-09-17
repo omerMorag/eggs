@@ -3,6 +3,7 @@
 import { ArrowLeft, HelpCircle, MapPin } from "lucide-react";
 import { epilogueItems } from "@/data/epilogue";
 import EpilogueCard from "@/components/shared/EpilogueCard";
+import HenIllustration from "@/components/hens/HenIllustration";
 
 /**
  * "מידע ומדריכים" — תוכן משלים קיים (מה קורה אחרי השאיבה / שימוש עתידי
@@ -13,14 +14,21 @@ import EpilogueCard from "@/components/shared/EpilogueCard";
 export default function GuidesSection() {
   return (
     <div className="print-stack animate-fadeUp">
-      <section>
-        <h1 className="font-sans text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">
-          מידע ומדריכים
-        </h1>
-        <p className="mt-1.5 max-w-lg text-sm leading-relaxed text-ink/60 sm:text-base">
-          מידע נוסף שיכול לעזור לאורך הדרך — מה קורה אחרי השאיבה, ומה קורה כשתרצי להשתמש
-          בביציות בעתיד.
-        </p>
+      <section className="lg:flex lg:items-center lg:justify-between lg:gap-8">
+        <div className="min-w-0">
+          <h1 className="font-sans text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">
+            מידע ומדריכים
+          </h1>
+          <p className="mt-1.5 max-w-lg text-sm leading-relaxed text-ink/60 sm:text-base">
+            מידע נוסף שיכול לעזור לאורך הדרך — מה קורה אחרי השאיבה, ומה קורה כשתרצי להשתמש
+            בביציות בעתיד.
+          </p>
+        </div>
+
+        {/* התרנגולת הקוראת — מוצגת במובייל אחרי הכותרת והתקציר, ובדסקטופ בצד הנגדי לטקסט */}
+        <div className="no-print mt-4 flex justify-center lg:mt-0 lg:shrink-0 lg:justify-end">
+          <HenIllustration name="learning" blob="mint" />
+        </div>
       </section>
 
       <section className="mt-6 flex flex-col gap-2.5 sm:mt-8 sm:gap-3">
