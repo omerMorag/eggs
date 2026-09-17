@@ -1,118 +1,118 @@
 "use client";
 
-import { BarChart3, HelpCircle, ListChecks, Workflow } from "lucide-react";
+import { BarChart3, HelpCircle, Sparkles, Workflow } from "lucide-react";
 import SectionHeading from "@/components/dashboard/SectionHeading";
 import ChanceCalculator from "@/components/chances/ChanceCalculator";
 import IllustrativeAgeTable from "@/components/chances/IllustrativeAgeTable";
-import EggsNeededTable from "@/components/chances/EggsNeededTable";
 import ProcessDiagram from "@/components/chances/ProcessDiagram";
+import KeyFactsGrid from "@/components/chances/KeyFactsGrid";
+import ChanceSupportCard from "@/components/chances/ChanceSupportCard";
 import ChanceFaq from "@/components/chances/ChanceFaq";
 import { chanceSources } from "@/data/chanceContent";
 
 /**
- * "מה הסיכוי שלי?" — המחשבון הקיים וכל התוכן שמסביבו (chanceModel/chanceContent
- * ללא שינוי בנוסחאות). לפי הדרישה: בלי Hero גדול ובלי שלושת כרטיסי ההסבר —
- * המחשבון נפתח מיד אחרי כותרת קצרה.
+ * "מה הסיכוי שלי?" — זוקק לפי בקשת המשתמשת (ראו site-build-summary.md
+ * ל"עדכון" המפורט). המחשבון עצמו (ChanceCalculator, chanceModel, chanceContent)
+ * לא שונה בשום דרך פונקציונלית — רק ההצגה סביבו. סדר הסקשנים הסופי:
+ * 1. כותרת+פתיח קצר, 2-3. מחשבון+תוצאה (בתוך ChanceCalculator עצמו),
+ * 4. טבלת "אותו מספר ביציות – גיל שונה", 5. שלושה דברים שחשוב לזכור,
+ * 6. משפך התהליך, 7. כרטיס תמיכה, 8. שלוש שאלות נפוצות,
+ * 9. מקורות ומתודולוגיה (גלוי תמיד — לא אקורדיון, כדי שכולן יראו על מה
+ * ההערכה מבוססת בלי צורך ללחוץ על כלום), 10. הבהרה רפואית.
  */
 export default function MyChancesSection() {
   return (
     <div className="print-stack animate-fadeUp">
+      {/* 1. כותרת ופתיח קצר */}
       <section>
         <h1 className="font-sans text-2xl font-extrabold leading-tight tracking-tight text-ink sm:text-3xl">
-          כמה ביציות צריך להקפיא כדי להגדיל את הסיכוי לילד?
+          מה הסיכוי שלי?
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink/70 sm:text-base">
-          הגיל שבו הביציות הוקפאו ומספר הביציות הבשלות שנשמרו הם שניים מהגורמים המרכזיים
-          שמשפיעים על הסיכוי להשתמש בהן בעתיד ולהגיע ללידת חי. כאן תוכלי לקבל הערכה
-          סטטיסטית פשוטה המבוססת על מודלים מחקריים.
+          בחרי את הגיל שבו הוקפאו הביציות ואת מספר הביציות הבשלות שהוקפאו, וקבלי הערכה
+          סטטיסטית לסיכוי ללידת חי.
         </p>
         <p className="mt-2 max-w-2xl text-xs leading-relaxed text-ink/50 sm:text-sm">
-          זהו כלי להמחשה ולהבנת הנתונים בלבד. הוא אינו תחזית רפואית אישית ואינו מבטיח
-          היריון או לידה.
+          החישוב הוא הערכה כללית המבוססת על נתונים מחקריים, ואינו תחזית רפואית אישית.
         </p>
       </section>
 
-      {/* המחשבון — מיד אחרי הכותרת, כנדרש */}
+      {/* 2-3. המחשבון + התוצאה — בדיוק כפי שהם, בלי שום שינוי בפונקציונליות */}
       <section className="mt-6 sm:mt-8">
         <ChanceCalculator />
       </section>
 
-      {/* טבלת המחשה */}
+      {/* 4. טבלת "אותו מספר ביציות – גיל שונה" */}
       <section className="mt-10 sm:mt-14">
         <SectionHeading icon={BarChart3} title="אותו מספר ביציות – גיל שונה" />
         <p className="mb-4 text-sm leading-relaxed text-ink/70 sm:text-[15px]">
-          הטבלה ממחישה מדוע הגיל בזמן ההקפאה משמעותי. אלו הערכות המבוססות על מודל מחקרי
-          ואינן תחזית אישית.
+          הטבלה ממחישה בקצרה עד כמה הגיל בזמן ההקפאה משפיע על ההערכה.
         </p>
         <IllustrativeAgeTable />
       </section>
 
-      {/* הדרך מביצית קפואה ללידת חי */}
+      {/* 5. שלושה דברים שחשוב לזכור */}
+      <section className="mt-10 sm:mt-14">
+        <SectionHeading icon={Sparkles} title="שלושה דברים שחשוב לזכור" />
+        <KeyFactsGrid />
+      </section>
+
+      {/* 6. משפך "למה לא כל ביצית קפואה הופכת לילד?" */}
       <section className="mt-10 sm:mt-14">
         <SectionHeading icon={Workflow} title="למה לא כל ביצית קפואה הופכת לילד?" />
-        <p className="mb-4 text-sm leading-relaxed text-ink/70 sm:text-[15px]">
-          בדרך מביצית שהוקפאה ועד ללידת חי יש כמה שלבים. בכל אחד מהם חלק מהביציות או
-          העוברים עשויים שלא להמשיך לשלב הבא.
-        </p>
         <ProcessDiagram />
-        <p className="mt-4 text-sm leading-relaxed text-ink/60">
-          לכן מספר הביציות שהוקפאו אינו זהה למספר העוברים, ההריונות או הילדים הצפויים.
-        </p>
       </section>
 
-      {/* כמה ביציות נחשב מספיק */}
+      {/* 7. כרטיס תמיכה */}
       <section className="mt-10 sm:mt-14">
-        <SectionHeading icon={ListChecks} title="אז כמה ביציות כדאי להקפיא?" />
-        <p className="mb-4 text-sm leading-relaxed text-ink/70 sm:text-[15px]">
-          אין מספר אחד שמתאים לכולן. המספר תלוי בגיל בזמן ההקפאה, במספר הילדים הרצוי
-          ובנתונים האישיים. גם מודלים ומחקרים שונים עשויים להציג הערכות מעט שונות.
-        </p>
-        <EggsNeededTable />
-        <p className="mt-4 text-sm leading-relaxed text-ink/60">
-          המספרים הם נקודת התמצאות מחקרית בלבד. האיגוד האמריקאי לרפואת פריון מציין שאין
-          כיום מספיק ראיות כדי לקבוע מספר מוחלט של ביציות הדרוש לכל אישה כדי להגיע ללידת
-          חי.
-        </p>
+        <ChanceSupportCard />
       </section>
 
-      {/* שאלות נפוצות */}
+      {/* 8. שלוש שאלות נפוצות */}
       <section id="my-chances-faq" className="mt-10 sm:mt-14">
         <SectionHeading icon={HelpCircle} title="שאלות נפוצות" />
         <ChanceFaq />
       </section>
 
-      {/* מקורות והבהרה רפואית */}
-      <section className="mt-10 rounded-2xl border-2 border-mist-200 bg-mist-50/60 p-5 sm:mt-14 sm:p-6">
-        <h2 className="font-sans text-lg font-bold tracking-tight text-ink sm:text-xl">
-          חשוב לקרוא לפני שמסתמכים על המספר
-        </h2>
-        <p className="mt-2.5 text-sm leading-relaxed text-ink/70 sm:text-[15px]">
-          המחשבון מציג הערכה המבוססת על מודל סטטיסטי שפורסם בשנת 2017. המודל כולל הנחות
-          לגבי הישרדות ביציות לאחר הפשרה, התפתחות לבלסטוציסט, תקינות כרומוזומלית והסיכוי
-          ללידת חי. הוא אינו מבוסס באופן בלעדי על נשים שחזרו להשתמש בביציות שהוקפאו מסיבות
-          חברתיות.
-        </p>
-        <p className="mt-2.5 text-sm leading-relaxed text-ink/70 sm:text-[15px]">
-          שיעורי ההצלחה עשויים להשתנות בין נשים, מרפאות, בתי חולים ומעבדות. המידע באתר
-          אינו מהווה ייעוץ רפואי, אבחון או המלצה לעבור שאיבה נוספת. החלטות רפואיות יש
-          לקבל עם רופא או רופאת פריון שמכירים את הנתונים האישיים שלך.
-        </p>
+      {/* 9. מקורות ומתודולוגיה — גלוי תמיד (לא אקורדיון), כדי שכל מי שנכנסת
+          לעמוד תראה בבירור על מה ההערכה מבוססת, בלי צורך ללחוץ על כלום */}
+      <section className="mt-10 sm:mt-14">
+        <div className="rounded-2xl border-2 border-mist-200 bg-mist-50/60 p-5 sm:p-6">
+          <h2 className="font-sans text-base font-bold tracking-tight text-ink sm:text-lg">
+            על מה מבוססת ההערכה?
+          </h2>
+          <p className="mt-2.5 text-sm leading-relaxed text-ink/70 sm:text-[15px]">
+            המחשבון מציג הערכה המבוססת על מודל סטטיסטי שפורסם בשנת 2017. המודל כולל הנחות
+            לגבי הישרדות ביציות לאחר הפשרה, התפתחות לבלסטוציסט, תקינות כרומוזומלית והסיכוי
+            ללידת חי.
+          </p>
+          <p className="mt-2.5 text-sm leading-relaxed text-ink/70 sm:text-[15px]">
+            שיעורי ההצלחה עשויים להשתנות בין נשים, מרפאות, בתי חולים ומעבדות.
+          </p>
+          <p className="mt-4 text-xs font-semibold text-ink/50">מקורות:</p>
+          <ul className="mt-1.5 space-y-1 text-xs leading-relaxed text-ink/50">
+            {chanceSources.map((source) => (
+              <li key={source.url}>
+                <a
+                  href={source.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline decoration-dotted underline-offset-2 hover:text-teal-700"
+                >
+                  {source.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
 
-        <p className="mt-4 text-xs font-semibold text-ink/50">מקורות:</p>
-        <ul className="mt-1.5 space-y-1 text-xs leading-relaxed text-ink/50">
-          {chanceSources.map((source) => (
-            <li key={source.url}>
-              <a
-                href={source.url}
-                target="_blank"
-                rel="noreferrer"
-                className="underline decoration-dotted underline-offset-2 hover:text-teal-700"
-              >
-                {source.label}
-              </a>
-            </li>
-          ))}
-        </ul>
+      {/* 10. הבהרה רפואית */}
+      <section className="mt-6 rounded-2xl bg-mist-50/60 p-4 sm:p-5">
+        <p className="text-xs leading-relaxed text-ink/60 sm:text-sm">
+          המידע באתר נועד להנגשת מידע כללי בלבד ואינו מהווה ייעוץ רפואי, אבחון או המלצה
+          טיפולית. לקבלת הערכה אישית יש לפנות לרופא/ת פוריות.
+        </p>
       </section>
     </div>
   );

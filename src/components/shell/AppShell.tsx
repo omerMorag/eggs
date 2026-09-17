@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { useJourneyProgress } from "@/lib/useJourneyProgress";
 import { useHashSection } from "@/lib/useHashSection";
 import DisclaimerFooter from "@/components/DisclaimerFooter";
@@ -9,9 +10,17 @@ import TestsSection from "@/components/sections/TestsSection";
 import WhereToGoSection from "@/components/sections/WhereToGoSection";
 import MyChancesSection from "@/components/sections/MyChancesSection";
 import GuidesSection from "@/components/sections/GuidesSection";
+import CostEstimatorSection from "@/components/sections/CostEstimatorSection";
+import StoriesSection from "@/components/sections/StoriesSection";
 import Sidebar from "./Sidebar";
 import MobileHeader from "./MobileHeader";
 import MobileDrawer from "./MobileDrawer";
+
+// dynamic import + ssr:false — עמוד המודרציה לא נשלח כלל לכל מבקרת רגילה
+// (רק כש-section === "admin-stories" בפועל, וגם אז רק אחרי useIsAdmin()).
+const AdminStoriesSection = dynamic(() => import("@/components/sections/AdminStoriesSection"), {
+  ssr: false,
+});
 
 /**
  * מעטפת האפליקציה כולה: Sidebar קבוע בדסקטופ / Header+Drawer במובייל,
@@ -38,7 +47,7 @@ export default function AppShell() {
   return (
     <div className="min-h-screen bg-mist-50/40">
       <Sidebar section={section} progress={progress} onNavigate={navigate} />
-      <MobileHeader section={section} onMenuClick={() => setDrawerOpen(true)} />
+      <MobileHeader onMenuClick={() => setDrawerOpen(true)} onNavigate={navigate} />
       <MobileDrawer
         open={drawerOpen}
         section={section}
@@ -55,6 +64,9 @@ export default function AppShell() {
           {section === "tests" && <TestsSection progress={progress} />}
           {section === "where-to-go" && <WhereToGoSection />}
           {section === "my-chances" && <MyChancesSection />}
+          {section === "cost-estimator" && <CostEstimatorSection />}
+          {section === "stories" && <StoriesSection />}
+          {section === "admin-stories" && <AdminStoriesSection />}
           {section === "guides" && <GuidesSection />}
         </main>
 

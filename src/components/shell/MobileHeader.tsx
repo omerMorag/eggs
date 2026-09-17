@@ -1,25 +1,24 @@
 "use client";
 
-import { Menu, Snowflake } from "lucide-react";
-import { navSections, type SectionId } from "@/data/navSections";
+import { Menu } from "lucide-react";
+import type { SectionId } from "@/data/navSections";
+import Logo from "@/components/brand/Logo";
 
 interface MobileHeaderProps {
-  section: SectionId;
   onMenuClick: () => void;
+  onNavigate: (id: SectionId) => void;
 }
 
-/** Header קומפקט למובייל/טאבלט (מוסתר מ-lg ומעלה, שם ה-Sidebar הקבוע תופס את מקומו). */
-export default function MobileHeader({ section, onMenuClick }: MobileHeaderProps) {
-  const activeLabel = navSections.find((s) => s.id === section)?.label ?? "";
-
+/**
+ * Header קומפקט למובייל/טאבלט (מוסתר מ-lg ומעלה, שם ה-Sidebar הקבוע תופס
+ * את מקומו). מציג את הלוגו (וריאציית compact: סמל + "מקפיאות") ולא את שם
+ * האזור הפעיל, כדי שהמיתוג יקבל נוכחות קבועה גם במובייל; שם האזור הפעיל
+ * עדיין מודגש ברשימת הניווט עצמה (NavList) בתוך המגירה.
+ */
+export default function MobileHeader({ onMenuClick, onNavigate }: MobileHeaderProps) {
   return (
     <header className="no-print sticky top-0 z-30 flex h-14 items-center justify-between border-b border-mist-200 bg-mist-100/90 px-3.5 backdrop-blur-md sm:h-16 sm:px-4 lg:hidden">
-      <div className="flex min-w-0 items-center gap-2 text-deep">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-600 text-white">
-          <Snowflake className="h-4 w-4" strokeWidth={2.5} />
-        </span>
-        <span className="truncate font-sans text-sm font-bold text-ink">{activeLabel}</span>
-      </div>
+      <Logo variant="compact" onClick={() => onNavigate("roadmap")} />
 
       <button
         type="button"

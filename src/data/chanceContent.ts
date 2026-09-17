@@ -12,19 +12,18 @@ export const keyFacts: KeyFactCard[] = [
     icon: CalendarHeart,
     title: "הגיל בזמן ההקפאה",
     description:
-      "החישוב מתייחס לגיל שבו הביציות נשאבו והוקפאו – ולא לגיל שבו תשתמשי בהן בעתיד.",
+      "הגיל הרלוונטי לחישוב הוא הגיל שבו הביציות הוקפאו, ולא הגיל שבו תרצי להשתמש בהן.",
   },
   {
     icon: Egg,
     title: "מספר הביציות הבשלות",
-    description:
-      "הנתון הרלוונטי הוא מספר הביציות הבשלות שהוקפאו בפועל, ולא מספר הזקיקים או המספר הכולל של הביציות שנשאבו.",
+    description: "החישוב מתייחס לביציות בשלות מסוג MII, ולא בהכרח לכל הביציות שנשאבו.",
   },
   {
     icon: Scale3d,
     title: "הערכה, לא הבטחה",
     description:
-      "גם כאשר מוקפא מספר גדול של ביציות, אי אפשר להבטיח היריון או לידת חי. הנתונים עוזרים להבין סיכויים – לא לנבא את העתיד.",
+      "המספר מבוסס על נתונים סטטיסטיים. תוצאה גבוהה אינה מבטיחה לידה, ותוצאה נמוכה אינה אומרת שאין סיכוי.",
   },
 ];
 
@@ -71,53 +70,24 @@ export interface FaqItem {
   answer: string;
 }
 
+// לפי בקשת המשתמשת: בדיוק שלוש שאלות, כל אחת קצרה וללא חזרה על תוכן שכבר
+// מוצג במחשבון, בטבלה או בכרטיסים שמעליה בעמוד.
 export const chanceFaq: FaqItem[] = [
-  {
-    question: "האם החישוב מתייחס לגיל שלי היום?",
-    answer: "לא. הנתון המרכזי הוא הגיל שבו הביציות נשאבו והוקפאו.",
-  },
-  {
-    question: "האם להזין את מספר הביציות שנשאבו?",
-    answer:
-      "יש להזין את מספר הביציות הבשלות שהוקפאו בפועל. לא כל ביצית שנשאבה בהכרח הייתה בשלה ומתאימה להקפאה.",
-  },
-  {
-    question: "ה-AMH שלי נמוך. האם זה אומר שהביציות שלי אינן איכותיות?",
-    answer:
-      "לא בהכרח. AMH משמש בעיקר להערכת הרזרבה השחלתית והתגובה הצפויה לטיפול. הוא אינו מדד ישיר לאיכות של כל ביצית ואינו מנבא לבדו לידת חי. הגיל בזמן השאיבה נשאר גורם מרכזי.",
-  },
-  {
-    question: "קיבלתי מעט ביציות. האם השאיבה הייתה לחינם?",
-    answer:
-      "לא. גם מספר קטן של ביציות בשלות עשוי להיות בעל משמעות. המחשבון מציג הסתברות מצטברת, אבל הוא אינו יכול לקבוע מה יקרה עם ביצית מסוימת.",
-  },
-  {
-    question: "האם אחוז גבוה מבטיח שיהיה לי ילד?",
-    answer:
-      "לא. גם אחוז גבוה הוא הערכה סטטיסטית בלבד. התוצאה תלויה בהפשרה, בהפריה, בהתפתחות העוברים, באיכות הזרע, במצב הרחם, באיכות המעבדה ובגורמים נוספים.",
-  },
-  {
-    question: "האם אחוז נמוך אומר שאין לי סיכוי?",
-    answer: "לא. מדובר בהערכה המבוססת על קבוצות אוכלוסייה והנחות סטטיסטיות, ולא בתחזית אישית.",
-  },
   {
     question: "האם אפשר לחבר ביציות מכמה סבבים?",
     answer:
-      "אם כל הביציות הוקפאו באותו גיל, אפשר להזין את המספר הכולל. אם הן הוקפאו בגילים שונים, יש לחשב כל קבוצה בנפרד ולשלב את ההסתברויות בצורה מתמטית מתאימה.",
+      "מספר הביציות המצטבר עשוי להיות רלוונטי, אבל צריך להביא בחשבון את הגיל שבו כל קבוצת ביציות הוקפאה — ולא רק את הסכום הכולל.",
   },
-];
-
-export interface EggsNeededRow {
-  ageRange: string;
-  eggsNeeded: string;
-}
-
-// טווח גילים ומספר ביציות בשלות שהוערך במחקר כדרוש לסיכוי של כ-70% ללידת חי אחת לפחות.
-// מקור: Goldman et al., 2017 (ראו chanceModel.ts).
-export const eggsNeededByAgeRange: EggsNeededRow[] = [
-  { ageRange: "30–34", eggsNeeded: "כ-14" },
-  { ageRange: "35–37", eggsNeeded: "כ-15" },
-  { ageRange: "38–40", eggsNeeded: "כ-26" },
+  {
+    question: "מה קורה אם הקפאתי ביציות בגילים שונים?",
+    answer:
+      "הגיל בזמן כל סבב חשוב, ולכן אין להתייחס לכל הביציות כאילו הוקפאו באותו גיל. המודל הנוכחי אינו כולל חישוב משולב אוטומטי לביציות שהוקפאו בגילים שונים.",
+  },
+  {
+    question: "אילו גורמים המחשבון לא כולל?",
+    answer:
+      "ההערכה אינה כוללת את כל המשתנים האישיים — למשל איכות המעבדה, נתונים רפואיים אישיים, איכות הזרע בעתיד, תגובת הביציות להפשרה והשונות בין מטופלות.",
+  },
 ];
 
 export const processStages: string[] = [
@@ -143,5 +113,15 @@ export const chanceSources: ChanceSource[] = [
   {
     label: "ASRM, Evidence-based outcomes after oocyte cryopreservation, 2021",
     url: "https://www.asrm.org/practice-guidance/practice-committee-documents/evidence-based-outcomes-after-oocyte-cryopreservation-for-donor-oocyte-in-vitro-fertilization-and-planned-oocyte-cryopreservation-a-guideline-2021/",
+  },
+  {
+    label:
+      "Maslow BL et al., Likelihood of achieving a 50%, 60%, or 70% estimated live birth rate threshold with 1 or 2 cycles of planned oocyte cryopreservation, Journal of Assisted Reproduction and Genetics, 2020",
+    url: "https://link.springer.com/article/10.1007/s10815-020-01791-w",
+  },
+  {
+    label:
+      "ASRM Ethics Committee, Planned oocyte cryopreservation to preserve future reproductive potential, Fertility and Sterility, 2024",
+    url: "https://www.asrm.org/practice-guidance/ethics-opinions/planned-oocyte-cryopreservation/",
   },
 ];

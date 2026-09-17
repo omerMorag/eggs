@@ -8,7 +8,6 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
-  Download,
   HelpCircle,
   NotebookPen,
 } from "lucide-react";
@@ -273,15 +272,6 @@ export default function TestChecklist({
           ויחידות.
         </p>
       </div>
-
-      <a
-        href="/tests-checklist.pdf"
-        download="רשימת-בדיקות-הקפאת-ביציות.pdf"
-        className="mt-5 flex w-full items-center justify-center gap-2.5 rounded-full bg-teal-600 px-6 py-3.5 text-sm font-bold tracking-[0.01em] text-ink shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:bg-teal-500 hover:shadow-cardHover active:translate-y-0 sm:w-auto"
-      >
-        <Download className="h-4 w-4" strokeWidth={2.25} />
-        הורדת קובץ הבדיקות (PDF)
-      </a>
     </div>
   );
 }

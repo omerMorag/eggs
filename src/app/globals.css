@@ -83,4 +83,12 @@ input:focus-visible {
   .print-stack > * + * {
     margin-top: 2.5rem !important;
   }
+
+  /* פאנלים מתקפלים (accordion, grid-rows-[0fr]/[1fr]) בתוך תוכן שמודפס —
+     נפתחים תמיד בהדפסה, כדי שהתוכן המלא (למשל פרטי בדיקה בצ'קליסט) לא
+     ייעלם מהקובץ שיורד/מודפס רק כי הוא היה סגור על המסך. */
+  .print-stack [role="region"] {
+    grid-template-rows: 1fr !important;
+    opacity: 1 !important;
+  }
 }

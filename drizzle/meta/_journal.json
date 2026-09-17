@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1789599424396,
+      "tag": "0000_workable_squadron_supreme",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789599427799,
+      "tag": "0001_search_and_constraints",
+      "breakpoints": true
+    }
+  ]
+}

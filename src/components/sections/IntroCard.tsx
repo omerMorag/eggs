@@ -1,7 +1,8 @@
 "use client";
 
-import { ArrowLeft, MapPin, Snowflake, Waypoints, FlaskConical } from "lucide-react";
+import { ArrowLeft, MapPin, Waypoints, FlaskConical } from "lucide-react";
 import LineArtBloom from "@/components/LineArtBloom";
+import Logo from "@/components/brand/Logo";
 
 const benefits = [
   { icon: Waypoints, label: "מסלול מסודר שלב אחר שלב" },
@@ -32,22 +33,14 @@ export default function IntroCard({ ctaLabel, onCtaClick, showPersistenceNote = 
 
       <div className="relative z-10 lg:flex lg:items-center lg:justify-between lg:gap-10">
         <div className="lg:max-w-xl">
-          <div className="flex items-center gap-2.5">
-            <span
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-600 text-white shadow-sm"
-              aria-hidden="true"
-            >
-              <Snowflake className="h-4 w-4" strokeWidth={2.5} />
-            </span>
-            <span className="eyebrow">כל התהליך במקום אחד</span>
-          </div>
+          <Logo variant="full" />
 
-          <p className="mt-3 font-sans text-base font-bold leading-snug text-deep sm:text-lg">
+          <p className="mt-4 font-sans text-base font-bold leading-snug text-deep sm:text-lg">
             גם את מרגישה שיש לך מיליון שאלות ואין לך מושג מאיפה להתחיל?
           </p>
 
           <h1 className="mt-2 font-sans text-2xl font-extrabold leading-tight tracking-tight text-ink sm:text-3xl">
-            הדרך שלך להקפאת ביציות, בלי ללכת לאיבוד
+            כל הדרך להקפאת ביציות, במקום אחד
           </h1>
           <p className="mt-2.5 text-sm leading-relaxed text-ink/70 sm:text-base">
             כאן תוכלי להבין מה עושים ובאיזה סדר, להכין את כל הבדיקות, להשוות בין מקומות ולעקוב

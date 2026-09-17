@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { X, Snowflake } from "lucide-react";
+import { X } from "lucide-react";
 import type { JourneyProgress } from "@/lib/useJourneyProgress";
 import type { SectionId } from "@/data/navSections";
 import FloatingPortal from "@/components/shared/FloatingPortal";
+import Logo from "@/components/brand/Logo";
 import ProgressCard from "./ProgressCard";
 import NavList from "./NavList";
+import AuthControl from "./AuthControl";
+import AdminNavLink from "./AdminNavLink";
 
 interface MobileDrawerProps {
   open: boolean;
@@ -73,14 +76,14 @@ export default function MobileDrawer({
           }`}
         >
           <div className="flex items-center justify-between gap-2 px-1">
-            <div className="flex min-w-0 items-center gap-2.5 text-deep">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-600 text-white">
-                <Snowflake className="h-4 w-4" strokeWidth={2.5} />
-              </span>
-              <span className="truncate font-sans text-sm font-extrabold text-ink">
-                המסע להקפאת ביציות
-              </span>
-            </div>
+            <Logo
+              variant="compact"
+              tabIndex={open ? 0 : -1}
+              onClick={() => {
+                onNavigate("roadmap");
+                onClose();
+              }}
+            />
             <button
               ref={closeButtonRef}
               type="button"
@@ -93,9 +96,20 @@ export default function MobileDrawer({
             </button>
           </div>
 
+          <AuthControl />
+
           <ProgressCard progress={progress} />
 
           <NavList
+            activeSection={section}
+            focusable={open}
+            onNavigate={(id) => {
+              onNavigate(id);
+              onClose();
+            }}
+          />
+
+          <AdminNavLink
             activeSection={section}
             focusable={open}
             onNavigate={(id) => {

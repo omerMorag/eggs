@@ -20,7 +20,7 @@ export default function ChanceResult({ age, eggs, familyGoal }: ChanceResultProp
   return (
     <div className="animate-fadeUp rounded-2xl border-2 border-teal-200 bg-teal-50/50 p-5 sm:p-7">
       <h3 className="text-center font-sans text-lg font-bold tracking-tight text-ink sm:text-xl">
-        ההערכה שלך
+        הערכה סטטיסטית ללידת חי
       </h3>
 
       <div className="mt-5 flex flex-col items-center">
@@ -54,6 +54,9 @@ export default function ChanceResult({ age, eggs, familyGoal }: ChanceResultProp
           </div>
         </div>
         <p className="mt-3 text-center text-sm font-semibold text-ink/70">{familyGoal.resultLabel}</p>
+        <p className="mt-1.5 text-center text-xs leading-relaxed text-ink/50">
+          זו אינה הבטחה או אבחנה רפואית. התוצאה האישית עשויה להיות שונה.
+        </p>
       </div>
 
       <p className="mx-auto mt-5 max-w-lg text-center text-sm leading-relaxed text-ink/70 sm:text-[15px]">

@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSession } from "next-auth/react";
 import { journeySteps } from "@/data/steps";
 import { testItems } from "@/data/tests";
+import { fetchServerProgress, pushServerProgress } from "@/lib/syncProgress";
 
 const STORAGE_KEY = "egg-freezing-journey:progress:v1";
 
-interface StoredProgress {
+export interface StoredProgress {
   steps: number[];
   /** נשמר לצורכי תאימות לאחור בלבד — נגזר כעת מ-testSubItems, ראו migration ב-load */
   tests: number[];
@@ -115,6 +117,114 @@ export function useJourneyProgress() {
       testDates,
     });
   }, [completedSteps, completedTests, completedTestSubItems, testDates, hydrated]);
+
+  // --- סנכרון ענן אופציונלי (Google + Upstash Redis) ---
+  // מצב אורחת (לא מחוברת) ממשיך לעבוד בדיוק כמו קודם — כל הלוגיקה כאן פועלת
+  // רק כש-status === "authenticated", ולעולם לא חוסמת/מעכבת את הטעינה מ-localStorage.
+  const { data: session, status } = useSession();
+  const userId =
+    status === "authenticated"
+      ? ((session?.user as { id?: string } | undefined)?.id ?? null)
+      : null;
+
+  // מזהה המשתמש/ת שעבורו/ה כבר בוצע מיזוג חד-פעמי בכניסה הנוכחית; מתאפס ביציאה
+  const mergedForUserIdRef = useRef<string | null>(null);
+  const pushTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // איפוס דגל המיזוג ביציאה, כדי שכניסה הבאה (גם לאותו חשבון) תמזג מחדש
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      mergedForUserIdRef.current = null;
+    }
+  }, [status]);
+
+  // מיזוג חד-פעמי בכניסה: לוקח את מה שיש בשרת, מאחד עם המקומי (union), ודוחף את
+  // התוצאה המאוחדת גם למקומי וגם בחזרה לשרת. פעם אחת בלבד לכל כניסה (per userId).
+  useEffect(() => {
+    if (!hydrated || !userId) return;
+    if (mergedForUserIdRef.current === userId) return;
+    mergedForUserIdRef.current = userId;
+
+    let cancelled = false;
+    (async () => {
+      const serverData = await fetchServerProgress();
+      if (cancelled) return;
+
+      if (!serverData) {
+        // לשרת אין נתונים עדיין — מעלים את המקומי כמות שהוא
+        await pushServerProgress({
+          steps: Array.from(completedSteps),
+          tests: Array.from(completedTests),
+          testSubItems: Array.from(completedTestSubItems),
+          testDates,
+        });
+        return;
+      }
+
+      // מיזוג איחוד: סימון לעולם לא "מתבטל" בטעות
+      const mergedSteps = new Set(completedSteps);
+      (serverData.steps ?? []).forEach((id) => mergedSteps.add(id));
+
+      const mergedSubItems = new Set(completedTestSubItems);
+      (serverData.testSubItems ?? []).forEach((key) => mergedSubItems.add(key));
+
+      const mergedDates: Record<number, string> = { ...testDates };
+      Object.entries(serverData.testDates ?? {}).forEach(([testId, date]) => {
+        if (date) mergedDates[Number(testId)] = date;
+      });
+
+      if (cancelled) return;
+      setCompletedSteps(mergedSteps);
+      setCompletedTestSubItems(mergedSubItems);
+      setTestDates(mergedDates);
+
+      const mergedTests: number[] = [];
+      testItems.forEach((test) => {
+        const count = subItemCount(test.id);
+        let allChecked = true;
+        for (let i = 0; i < count; i += 1) {
+          if (!mergedSubItems.has(`${test.id}:${i}`)) {
+            allChecked = false;
+            break;
+          }
+        }
+        if (allChecked) mergedTests.push(test.id);
+      });
+
+      await pushServerProgress({
+        steps: Array.from(mergedSteps),
+        tests: mergedTests,
+        testSubItems: Array.from(mergedSubItems),
+        testDates: mergedDates,
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, userId]);
+
+  // דחיפה מדוד (debounced) לשרת בכל שינוי מקומי, רק כשמחוברת וכבר בוצע המיזוג
+  // הראשוני — כדי לא לדרוס את נתוני השרת לפני שהמיזוג הספיק לרוץ.
+  useEffect(() => {
+    if (!hydrated || !userId) return;
+    if (mergedForUserIdRef.current !== userId) return;
+
+    if (pushTimeoutRef.current) clearTimeout(pushTimeoutRef.current);
+    pushTimeoutRef.current = setTimeout(() => {
+      pushServerProgress({
+        steps: Array.from(completedSteps),
+        tests: Array.from(completedTests),
+        testSubItems: Array.from(completedTestSubItems),
+        testDates,
+      });
+    }, 1500);
+
+    return () => {
+      if (pushTimeoutRef.current) clearTimeout(pushTimeoutRef.current);
+    };
+  }, [completedSteps, completedTests, completedTestSubItems, testDates, hydrated, userId]);
 
   const toggleStep = useCallback((id: number) => {
     setCompletedSteps((prev) => {

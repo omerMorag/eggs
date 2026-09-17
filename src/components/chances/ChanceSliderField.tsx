@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Minus, Plus } from "lucide-react";
 import { clamp } from "@/data/chanceModel";
 
@@ -23,11 +23,29 @@ export default function ChanceSliderField({
   onChange,
   helperText,
 }: ChanceSliderFieldProps) {
-  const handleNumberChange = (raw: string) => {
-    if (raw === "") return;
-    const parsed = Number(raw.replace(/[^\d]/g, ""));
-    if (Number.isNaN(parsed)) return;
-    onChange(clamp(parsed, min, max));
+  /**
+   * שדה המספר עובד על טיוטת טקסט מקומית (draft) ולא על ה-value המחושב
+   * ישירות. הבאג שהיה כאן קודם: כל הקשה הייתה מבצעת clamp מיידי ל-min/max
+   * — כך שהקלדת גיל דו-ספרתי כמו "27" (כש-min הוא 25) הייתה תקועה על 25
+   * כבר אחרי הספרה הראשונה, ולא הייתה דרך להקליד את הספרה השנייה. עכשיו
+   * מותר להקליד/למחוק חופשי (כולל ריקון השדה זמנית), וה-clamp וה-onChange
+   * קורים רק כשעוזבים את השדה (blur) או לוחצים Enter.
+   */
+  const [draft, setDraft] = useState(String(value));
+
+  useEffect(() => {
+    setDraft(String(value));
+  }, [value]);
+
+  const commitDraft = () => {
+    const parsed = Number(draft.replace(/[^\d]/g, ""));
+    if (draft === "" || Number.isNaN(parsed)) {
+      setDraft(String(value));
+      return;
+    }
+    const clamped = clamp(parsed, min, max);
+    setDraft(String(clamped));
+    if (clamped !== value) onChange(clamped);
   };
 
   return (
@@ -70,8 +88,14 @@ export default function ChanceSliderField({
             inputMode="numeric"
             min={min}
             max={max}
-            value={value}
-            onChange={(e) => handleNumberChange(e.target.value)}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value.replace(/[^\d]/g, ""))}
+            onBlur={commitDraft}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.currentTarget.blur();
+              }
+            }}
             aria-label={label}
             className="w-16 shrink-0 rounded-xl border-2 border-mist-200 bg-white px-2 py-2.5 text-center text-base font-bold text-ink focus:border-teal-400 focus:outline-none"
           />

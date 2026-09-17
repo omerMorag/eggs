@@ -2,12 +2,21 @@
 
 import type { JourneyProgress } from "@/lib/useJourneyProgress";
 import TestChecklist from "@/components/dashboard/TestChecklist";
+import DownloadTestsButton from "@/components/dashboard/DownloadTestsButton";
 
 interface TestsSectionProps {
   progress: JourneyProgress;
 }
 
-/** "הבדיקות שלי" — כל צ'קליסט הבדיקות הקיים (tests.ts), ללא שינוי בתוכן. */
+/**
+ * "הבדיקות שלי" — כל צ'קליסט הבדיקות הקיים (tests.ts), ללא שינוי בתוכן.
+ * כפתור "הורדת קובץ הבדיקות" (DownloadTestsButton) נשאר ורוד ובסגנון
+ * הכפתור המקורי, אך צר יותר וקומפקטי (לפי בקשת המשתמשת). בפועל הוא מפעיל
+ * את דיאלוג ההדפסה של הדפדפן על הדף כפי שהוא נראה כרגע — כך שבמקום קובץ
+ * PDF סטטי, מה שמופק משקף את המצב האמיתי (צ'ק-בוקסים מסומנים, תאריכים
+ * שהוזנו, סטטוס תוקף) — ראו גם ה-@media print שנוסף ב-globals.css שפותח
+ * את פאנל הפרטים המתקפל של כל בדיקה בזמן הדפסה.
+ */
 export default function TestsSection({ progress }: TestsSectionProps) {
   const { doneTestsCount, totalTests } = progress;
 
@@ -22,9 +31,12 @@ export default function TestsSection({ progress }: TestsSectionProps) {
             צ׳קליסט הבדיקות שרוב היחידות מבקשות בשלב המקדים — סמני מה כבר בוצע.
           </p>
         </div>
-        <span className="no-print inline-flex shrink-0 items-center rounded-full bg-teal-50 px-3.5 py-1.5 text-sm font-bold text-teal-700 ring-1 ring-inset ring-teal-100">
-          {doneTestsCount} מתוך {totalTests} בדיקות הושלמו
-        </span>
+        <div className="no-print flex flex-wrap items-center gap-2">
+          <span className="inline-flex shrink-0 items-center rounded-full bg-teal-50 px-3.5 py-1.5 text-sm font-bold text-teal-700 ring-1 ring-inset ring-teal-100">
+            {doneTestsCount} מתוך {totalTests} בדיקות הושלמו
+          </span>
+          <DownloadTestsButton />
+        </div>
       </section>
 
       <section className="mt-6 sm:mt-8">
