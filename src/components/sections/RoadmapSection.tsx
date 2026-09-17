@@ -7,7 +7,6 @@ import { journeySteps } from "@/data/steps";
 import StepList from "@/components/dashboard/StepList";
 import PrintButton from "@/components/dashboard/PrintButton";
 import ResetButton from "@/components/dashboard/ResetButton";
-import TimeSaverSection from "@/components/dashboard/TimeSaverSection";
 import LineArtBloom from "@/components/LineArtBloom";
 import IntroCard from "./IntroCard";
 
@@ -20,10 +19,11 @@ interface RoadmapSectionProps {
 /**
  * "המסלול שלי" — המסך הראשון שנפתח באתר. סדר התוכן: כרטיס היכרות קצר
  * (IntroCard) -> כרטיס "השלב הבא שלך" -> כותרת הצ'קליסט (הכותרת/הכפתורים
- * שהיו בעבר בראש העמוד, שהוזזה לכאן) ורשימת השלבים, עם כרטיס "חוסכות זמן"
- * משולב בתוך הרשימה אחרי קבוצת השלבים המקבילים הראשונה (שלבים 1-2) במקום
- * לפני הרשימה כולה. מקור התוכן: src/data/steps.ts, זהה למה שהיה בעבר
- * בעמוד /dashboard — לא שוכפל, רק הועבר והוזז.
+ * שהיו בעבר בראש העמוד, שהוזזה לכאן) ורשימת השלבים. קבוצת השלבים המקבילים
+ * הראשונה (שלבים 1-2) כבר מסומנת ע"י הקו המחבר + התגית "אפשר להתקדם במקביל"
+ * בתוך StepList עצמו, כך שאין כרטיס הסבר נפרד אחריה (הוסר לפי בקשה — היה
+ * כפול). מקור התוכן: src/data/steps.ts, זהה למה שהיה בעבר בעמוד /dashboard —
+ * לא שוכפל, רק הועבר והוזז.
  */
 export default function RoadmapSection({ progress, openStepId, onOpenStep }: RoadmapSectionProps) {
   const rowRefs = useRef<Map<number, HTMLLIElement>>(new Map());
@@ -157,7 +157,6 @@ export default function RoadmapSection({ progress, openStepId, onOpenStep }: Roa
           onToggleDone={progress.toggleStep}
           onToggleExpand={toggleExpand}
           setRowRef={setRowRef}
-          afterFirstGroup={<TimeSaverSection />}
         />
       </section>
     </div>
