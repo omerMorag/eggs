@@ -18,10 +18,11 @@ interface LogoProps {
   tabIndex?: number;
 }
 
+/** גובה הסמל בפיקסלים (התרנגולת גבוהה מרחבה — הרוחב נגזר אוטומטית ב-LogoMark). */
 const DEFAULT_MARK_SIZE: Record<LogoVariant, number> = {
-  full: 48,
-  compact: 34,
-  icon: 32,
+  full: 56,
+  compact: 40,
+  icon: 36,
 };
 
 const BRAND_NAME = "מקפיאות";
@@ -54,13 +55,15 @@ export default function Logo({ variant, onClick, markSize, className, tabIndex }
       }
     : {};
 
-  const markStyle = { width: size, height: size };
+  // רק הגובה נקבע כאן — הרוחב תמיד "auto" בתוך LogoMark עצמו, כדי
+  // שהתרנגולת תוצג בשלמותה, בלי מתיחה ובלי חיתוך ליחס-רוחב מרובע.
+  const markStyle = { height: size };
 
   if (variant === "icon") {
     return (
       <Wrapper
         {...wrapperProps}
-        className={`inline-flex shrink-0 items-center justify-center rounded-full transition-opacity ${
+        className={`inline-flex shrink-0 items-center justify-center transition-opacity ${
           onClick ? "hover:opacity-80" : ""
         } ${className ?? ""}`}
       >

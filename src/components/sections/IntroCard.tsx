@@ -2,7 +2,6 @@
 
 import { ArrowLeft, MapPin, Waypoints, FlaskConical } from "lucide-react";
 import LineArtBloom from "@/components/LineArtBloom";
-import Logo from "@/components/brand/Logo";
 
 const benefits = [
   { icon: Waypoints, label: "מסלול מסודר שלב אחר שלב" },
@@ -33,13 +32,16 @@ export default function IntroCard({ ctaLabel, onCtaClick, showPersistenceNote = 
 
       <div className="relative z-10 lg:flex lg:items-center lg:justify-between lg:gap-10">
         <div className="lg:max-w-xl">
-          <Logo variant="full" />
-
-          <p className="mt-4 font-sans text-base font-bold leading-snug text-deep sm:text-lg">
+          <p className="font-sans text-base font-bold leading-snug text-deep sm:text-lg">
             גם את מרגישה שיש לך מיליון שאלות ואין לך מושג מאיפה להתחיל?
           </p>
 
-          <h1 className="mt-2 font-sans text-2xl font-extrabold leading-tight tracking-tight text-ink sm:text-3xl">
+          {/* שם המותג, בגדול — תופס את המקום שבו קודם ישבה שורת הלוגו הקטנה */}
+          <p className="mt-2 font-sans text-3xl font-extrabold leading-none tracking-tight text-ink sm:text-4xl">
+            מקפיאות
+          </p>
+
+          <h1 className="mt-3 font-sans text-2xl font-extrabold leading-tight tracking-tight text-ink sm:text-3xl">
             כל הדרך להקפאת ביציות, במקום אחד
           </h1>
           <p className="mt-2.5 text-sm leading-relaxed text-ink/70 sm:text-base">
@@ -82,8 +84,11 @@ export default function IntroCard({ ctaLabel, onCtaClick, showPersistenceNote = 
           </div>
         </div>
 
+        {/* התרנגולת — במקום איור הפרח הגדול שהיה כאן קודם. הגוף המלא שלה
+            מוצג תמיד (בלי חיתוך), ממורכזת אנכית מול עמודת הטקסט. */}
         <div className="mt-6 hidden shrink-0 lg:mt-0 lg:block" aria-hidden="true">
-          <LineArtBloom className="h-56 w-44 text-teal-300/70" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/hen-full.png" alt="" className="h-56 w-auto sm:h-64" />
         </div>
       </div>
     </section>
