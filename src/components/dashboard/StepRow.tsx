@@ -3,6 +3,19 @@
 import { Check, ChevronDown, Info } from "lucide-react";
 import type { JourneyStep } from "@/data/types";
 import { formatRichText } from "@/lib/richText";
+import HenIllustration, { type HenName } from "@/components/hens/HenIllustration";
+
+/**
+ * מיפוי שלב -> איור תרנגולת בכרטיס הצ'קליסט עצמו (מחליף את אייקון ה-lucide
+ * הגנרי שבחלק מהשלבים). לא לכל שלב יש כרגע תרנגולת מתאימה שסופקה — שלבים
+ * שאינם ברשימה ממשיכים להציג את האייקון הגנרי הרגיל, בלי שינוי. הרשימה
+ * מיועדת להתמלא בהמשך ככל שיתווספו עוד איורים לשלבים 1–4.
+ */
+const STEP_HEN: Partial<Record<number, HenName>> = {
+  5: "step-protocol",
+  6: "step-monitoring",
+  7: "step-retrieval",
+};
 
 interface StepRowProps {
   step: JourneyStep;
@@ -26,6 +39,7 @@ export default function StepRow({
   const Icon = step.icon;
   const panelId = `step-info-${step.id}`;
   const checkboxId = `step-checkbox-${step.id}`;
+  const henName = STEP_HEN[step.id];
 
   return (
     <li
@@ -44,14 +58,24 @@ export default function StepRow({
           aria-describedby={`${checkboxId}-label`}
         />
 
-        <span
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors duration-300 sm:h-10 sm:w-10 ${
-            isDone ? "bg-teal-100 text-teal-700" : "bg-mist-100 text-deep"
-          }`}
-          aria-hidden="true"
-        >
-          <Icon className="h-[18px] w-[18px]" strokeWidth={2} />
-        </span>
+        {henName ? (
+          <HenIllustration
+            name={henName}
+            blob={isDone ? "mint" : "cream"}
+            activeRing={isExpanded}
+            doneBadge={isDone}
+            className="mt-0.5"
+          />
+        ) : (
+          <span
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors duration-300 sm:h-10 sm:w-10 ${
+              isDone ? "bg-teal-100 text-teal-700" : "bg-mist-100 text-deep"
+            }`}
+            aria-hidden="true"
+          >
+            <Icon className="h-[18px] w-[18px]" strokeWidth={2} />
+          </span>
+        )}
 
         <div className="min-w-0 flex-1">
           <label

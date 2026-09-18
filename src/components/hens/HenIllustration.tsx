@@ -16,7 +16,12 @@ export type HenName =
   | "statistics"
   | "choose-clinic"
   | "tests"
-  | "roadmap";
+  | "roadmap"
+  | "step-protocol"
+  | "step-monitoring"
+  | "step-injections"
+  | "step-retrieval"
+  | "step-trophy";
 
 interface HenConfig {
   file: string;
@@ -61,6 +66,36 @@ const HENS: Record<HenName, HenConfig> = {
     alt: "תרנגולת מלווה את מסלול הקפאת הביציות",
     defaultSizeClassName: "w-40 sm:w-44 lg:w-64",
   },
+  // איורי צ'קליסט — סט נפרד (תרנגולת עם כובע גרב טורקיז ומשקפי סקי), שמחליף
+  // את האייקונים הגנריים בכרטיסי השלבים עצמם. נשמרים בתיקיית משנה משלהם
+  // (public/images/hens/checklist/) כדי לא להתערבב עם איורי כותרות האזורים
+  // שמעליהם. הגודל המוגדר כברירת מחדל תואם את הטווח שהתבקש לכרטיסי השלבים:
+  // כ-70–85px במובייל, כ-100–120px בדסקטופ.
+  "step-protocol": {
+    file: "checklist/hen-step-protocol.png",
+    alt: "תרנגולת מחזיקה לוח שנה עם יום מסומן ופתית שלג, מייצגת קבלת פרוטוקול טיפול אישי",
+    defaultSizeClassName: "w-[78px] sm:w-24 lg:w-[112px]",
+  },
+  "step-monitoring": {
+    file: "checklist/hen-step-monitoring.png",
+    alt: "תרנגולת עומדת ליד מכשיר אולטרסאונד ומצביעה על המסך, מייצגת מעקבי דם ואולטרסאונד",
+    defaultSizeClassName: "w-[78px] sm:w-24 lg:w-[112px]",
+  },
+  "step-injections": {
+    file: "checklist/hen-step-injections.png",
+    alt: "תרנגולת מחזיקה עט הזרקה ותיק תרופות קטן, מייצגת תחילת הזריקות",
+    defaultSizeClassName: "w-[78px] sm:w-24 lg:w-[112px]",
+  },
+  "step-retrieval": {
+    file: "checklist/hen-step-retrieval.png",
+    alt: "תרנגולת לובשת חלוק וכובע רפואי ומחזיקה קופסה עם ביציות, מייצגת את יום השאיבה",
+    defaultSizeClassName: "w-[78px] sm:w-24 lg:w-[112px]",
+  },
+  "step-trophy": {
+    file: "checklist/hen-step-trophy.png",
+    alt: "תרנגולת מרימה גביע עם ביצה מוזהבת, לציון השלמת כל שלבי התהליך",
+    defaultSizeClassName: "w-36 sm:w-40 lg:w-56",
+  },
 };
 
 interface HenIllustrationProps {
@@ -70,6 +105,11 @@ interface HenIllustrationProps {
   /** מחליף את מחלקות הגודל המומלצות כשצריך להתאים לפריסה ספציפית */
   sizeClassName?: string;
   className?: string;
+  /** הילה עדינה בגוון מנטה סביב האיור — לשימוש בכרטיס פעיל/פתוח בלבד */
+  activeRing?: boolean;
+  /** תגית וי קטנה בפינת אזור התמונה — לשימוש בכרטיס שהושלם; ממוקמת מחוץ
+   * לגבולות האיור עצמו כדי שלעולם לא תכסה את התרנגולת */
+  doneBadge?: boolean;
 }
 
 const BLOB_CLASSES: Record<Exclude<HenIllustrationProps["blob"], undefined | "none">, string> = {
@@ -84,7 +124,14 @@ const BLOB_CLASSES: Record<Exclude<HenIllustrationProps["blob"], undefined | "no
  * שקיפות הרקע ויחס הממדים המקוריים נשמרים תמיד (object-contain בפועל, כי
  * ה-img הוא PNG חתוך-שוליים בלי stretch).
  */
-export default function HenIllustration({ name, blob = "none", sizeClassName, className }: HenIllustrationProps) {
+export default function HenIllustration({
+  name,
+  blob = "none",
+  sizeClassName,
+  className,
+  activeRing = false,
+  doneBadge = false,
+}: HenIllustrationProps) {
   const hen = HENS[name];
 
   return (
@@ -99,9 +146,26 @@ export default function HenIllustration({ name, blob = "none", sizeClassName, cl
       <img
         src={`/images/hens/${hen.file}`}
         alt={hen.alt}
-        className={`relative h-auto max-w-full animate-fadeUp object-contain ${sizeClassName ?? hen.defaultSizeClassName}`}
+        className={`relative h-auto max-w-full animate-fadeUp object-contain transition-shadow duration-300 ${
+          sizeClassName ?? hen.defaultSizeClassName
+        } ${activeRing ? "rounded-full ring-4 ring-warm-300/50" : ""}`}
         style={{ filter: "drop-shadow(0 10px 18px rgba(36, 22, 25, 0.12))" }}
       />
+      {doneBadge && (
+        <span
+          className="absolute -bottom-1 -start-1 flex h-5 w-5 items-center justify-center rounded-full bg-teal-600 text-white shadow-sm ring-2 ring-white"
+          aria-hidden="true"
+        >
+          <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" strokeWidth={3.5}>
+            <path
+              d="M5 13l4 4L19 7"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      )}
     </div>
   );
 }

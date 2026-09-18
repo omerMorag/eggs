@@ -77,7 +77,7 @@ export default function RoadmapSection({ progress, openStepId, onOpenStep }: Roa
                 </span>
                 <div>
                   <h2 className="font-sans text-base font-bold tracking-tight text-ink sm:text-lg">
-                    כל השלבים סומנו כהושלמו!
+                    עשית את זה! סיימת את מסע הקפאת הביציות שלך 💛
                   </h2>
                   <p className="mt-0.5 text-sm leading-relaxed text-ink/60">
                     כל הכבוד — אפשר לעקוב אחרי הבדיקות והמידע הנוסף בתפריט הצד.
@@ -119,7 +119,10 @@ export default function RoadmapSection({ progress, openStepId, onOpenStep }: Roa
               את תחושת ההתקדמות, לא מסמנת סיום (זו שמורה לתרנגולת עם הגביע,
               שתתווסף בעתיד רק אחרי שלב השאיבה) */}
           <div className="mt-4 flex justify-center lg:mt-0 lg:shrink-0 lg:justify-end">
-            <HenIllustration name="roadmap" sizeClassName="w-36 sm:w-40 lg:w-56" />
+            <HenIllustration
+              name={allStepsCompleted ? "step-trophy" : "roadmap"}
+              sizeClassName="w-36 sm:w-40 lg:w-56"
+            />
           </div>
         </div>
       </section>
