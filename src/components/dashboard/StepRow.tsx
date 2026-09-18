@@ -8,14 +8,23 @@ import HenIllustration, { type HenName } from "@/components/hens/HenIllustration
 /**
  * מיפוי שלב -> איור תרנגולת בכרטיס הצ'קליסט עצמו (מחליף את אייקון ה-lucide
  * הגנרי שבחלק מהשלבים). לא לכל שלב יש כרגע תרנגולת מתאימה שסופקה — שלבים
- * שאינם ברשימה ממשיכים להציג את האייקון הגנרי הרגיל, בלי שינוי. הרשימה
- * מיועדת להתמלא בהמשך ככל שיתווספו עוד איורים לשלבים 1–4.
+ * שאינם ברשימה ממשיכים להציג את האייקון הגנרי הרגיל, בלי שינוי. שלבים 2
+ * ו-4 משתמשים בתרנגולות שכבר קיימות במיפוי המרכזי (משמשות גם באזורים
+ * אחרים באתר — "choose-clinic" ב"איפה כדאי לעשות?", "consultation" שהיה
+ * קודם כהערה נפרדת אחרי שלב 4 והוחלף כעת בשימוש כאייקון השלב עצמו).
  */
 const STEP_HEN: Partial<Record<number, HenName>> = {
+  2: "choose-clinic",
+  4: "consultation",
   5: "step-protocol",
   6: "step-monitoring",
   7: "step-retrieval",
 };
+
+/** גודל אחיד לכל תרנגולת שמופיעה בתוך כרטיס צ'קליסט — כ-70–85px במובייל,
+ * כ-100–120px בדסקטופ, ללא תלות בגודל ברירת המחדל של אותה תרנגולת
+ * במקומות אחרים באתר (כמו כותרת "איפה כדאי לעשות?"). */
+const CHECKLIST_HEN_SIZE = "w-[78px] sm:w-24 lg:w-[112px]";
 
 interface StepRowProps {
   step: JourneyStep;
@@ -62,6 +71,7 @@ export default function StepRow({
           <HenIllustration
             name={henName}
             blob={isDone ? "mint" : "cream"}
+            sizeClassName={CHECKLIST_HEN_SIZE}
             activeRing={isExpanded}
             doneBadge={isDone}
             className="mt-0.5"

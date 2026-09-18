@@ -163,22 +163,6 @@ export default function RoadmapSection({ progress, openStepId, onOpenStep }: Roa
           onToggleDone={progress.toggleStep}
           onToggleExpand={toggleExpand}
           setRowRef={setRowRef}
-          renderAfterStep={(stepId) =>
-            stepId === 4 ? (
-              <div className="flex items-center gap-3 rounded-2xl border-2 border-teal-200 bg-teal-50/50 p-3.5 sm:gap-4 sm:p-4">
-                <HenIllustration
-                  name="consultation"
-                  blob="pink"
-                  sizeClassName="w-20 sm:w-24 lg:w-32"
-                  className="shrink-0"
-                />
-                <p className="text-sm leading-relaxed text-ink/70">
-                  לקראת הפגישה, כדאי לרכז מראש את השאלות שחשוב לך לשאול — יש כמה דוגמאות
-                  ב״מידע נוסף״ של השלב הזה.
-                </p>
-              </div>
-            ) : null
-          }
         />
       </section>
     </div>
