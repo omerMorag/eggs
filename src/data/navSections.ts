@@ -29,7 +29,7 @@ export const navSections: NavSectionDef[] = [
   { id: "my-chances", label: "מה הסיכוי שלי?", icon: Percent },
   { id: "cost-estimator", label: "כמה יעלה לי?", icon: Wallet },
   { id: "stories", label: "סיפורים מהמקפיא", icon: Heart },
-  { id: "guides", label: "מידע ומדריכים", icon: BookOpen },
+  { id: "guides", label: "יום השאיבה", icon: BookOpen },
 ];
 
 // "admin-stories" נשאר מחוץ ל-navSections בכוונה: NavList.tsx המשותף לא
