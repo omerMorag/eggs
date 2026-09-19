@@ -17,6 +17,8 @@ interface MobileDrawerProps {
   progress: JourneyProgress;
   onNavigate: (id: SectionId) => void;
   onClose: () => void;
+  /** לחיצה על הלוגו מחזירה למסך הפתיחה (לא רק לאזור "המסלול שלי") */
+  onGoHome: () => void;
 }
 
 /**
@@ -32,6 +34,7 @@ export default function MobileDrawer({
   progress,
   onNavigate,
   onClose,
+  onGoHome,
 }: MobileDrawerProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -80,7 +83,7 @@ export default function MobileDrawer({
               variant="compact"
               tabIndex={open ? 0 : -1}
               onClick={() => {
-                onNavigate("roadmap");
+                onGoHome();
                 onClose();
               }}
             />

@@ -3,12 +3,10 @@
 import { useCallback, useRef } from "react";
 import { ArrowLeft, PartyPopper, Zap } from "lucide-react";
 import type { JourneyProgress } from "@/lib/useJourneyProgress";
-import { journeySteps } from "@/data/steps";
 import StepList from "@/components/dashboard/StepList";
 import PrintButton from "@/components/dashboard/PrintButton";
 import ResetButton from "@/components/dashboard/ResetButton";
 import HenIllustration from "@/components/hens/HenIllustration";
-import IntroCard from "./IntroCard";
 
 interface RoadmapSectionProps {
   progress: JourneyProgress;
@@ -17,13 +15,15 @@ interface RoadmapSectionProps {
 }
 
 /**
- * "המסלול שלי" — המסך הראשון שנפתח באתר. סדר התוכן: כרטיס היכרות קצר
- * (IntroCard) -> כרטיס "השלב הבא שלך" -> כותרת הצ'קליסט (הכותרת/הכפתורים
- * שהיו בעבר בראש העמוד, שהוזזה לכאן) ורשימת השלבים. קבוצת השלבים המקבילים
- * הראשונה (שלבים 1-2) כבר מסומנת ע"י הקו המחבר + התגית "אפשר להתקדם במקביל"
- * בתוך StepList עצמו, כך שאין כרטיס הסבר נפרד אחריה (הוסר לפי בקשה — היה
- * כפול). מקור התוכן: src/data/steps.ts, זהה למה שהיה בעבר בעמוד /dashboard —
- * לא שוכפל, רק הועבר והוזז.
+ * "המסלול שלי" — האזור שנפתח מיד אחרי המעבר ממסך הפתיחה (IntroScreen, ראו
+ * AppShell.tsx). סדר התוכן: כרטיס קומפקטי "השלב הבא שלך" -> כותרת הצ'קליסט
+ * (הכותרת/הכפתורים שהיו בעבר בראש העמוד) ורשימת השלבים. כרטיס ההיכרות
+ * שהיה כאן בעבר (IntroCard) הוצא מהזרימה: ההיכרות עם האתר עברה במלואה
+ * למסך הפתיחה הנפרד, כך שאין כפילות בין שני המסכים; קובץ IntroCard.tsx
+ * עצמו נשאר בקוד בלי שימוש (בהתאם לתקדים הקיים בפרויקט של לא למחוק
+ * רכיבים שהוחלפו). קבוצת השלבים המקבילים הראשונה (שלבים 1-2) כבר מסומנת
+ * ע"י הקו המחבר + התגית "אפשר להתקדם במקביל" בתוך StepList עצמו, כך שאין
+ * כרטיס הסבר נפרד אחריה. מקור התוכן: src/data/steps.ts.
  */
 export default function RoadmapSection({ progress, openStepId, onOpenStep }: RoadmapSectionProps) {
   const rowRefs = useRef<Map<number, HTMLLIElement>>(new Map());
@@ -52,76 +52,59 @@ export default function RoadmapSection({ progress, openStepId, onOpenStep }: Roa
 
   const { nextStep, allStepsCompleted, hasAnyProgress, doneStepsCount, totalSteps } = progress;
 
-  // יעד הגלילה של כפתור ההיכרות: השלב הבא שטרם הושלם, או השלב הראשון אם
-  // עדיין לא סומן כלום; אם כל השלבים כבר הושלמו (nextStep הוא null), חוזרים
-  // לשלב הראשון לצפייה חוזרת, בלי ליצור מצב שבור.
-  const introTargetStepId = nextStep?.id ?? journeySteps[0]?.id;
-  const introCtaLabel = hasAnyProgress ? "ממשיכה מהמקום שלי" : "מתחילה מהשלב הראשון";
-
   return (
     <div className="print-stack">
-      {/* כרטיס היכרות קצר — מסביר מהו האתר, איך הוא עוזר ומאיפה מתחילים */}
-      <IntroCard
-        ctaLabel={introCtaLabel}
-        onCtaClick={() => introTargetStepId !== undefined && openStepAndScroll(introTargetStepId)}
-      />
-
-      {/* כרטיס "השלב הבא שלך" */}
-      <section className="relative mt-5 animate-fadeUp overflow-hidden rounded-2xl border-2 border-warm-300/60 bg-warm-100/50 p-5 shadow-card sm:mt-6 sm:p-6">
-        <div className="relative z-10 lg:flex lg:items-center lg:justify-between lg:gap-6">
-          <div className="min-w-0 flex-1">
-            {allStepsCompleted ? (
-              <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-warm-500 shadow-sm ring-1 ring-warm-300/50">
-                  <PartyPopper className="h-5 w-5" strokeWidth={2} />
+      {/* כרטיס "השלב הבא שלך" — קומפקטי בכוונה: זהו כעת האלמנט הראשון באזור
+          המסלול (נכנסים אליו ישירות ממסך הפתיחה), ולכן לא מיועד "לדחוף" את
+          הצ'קליסט רחוק מדי מטה */}
+      <section className="relative animate-fadeUp overflow-hidden rounded-2xl border-2 border-warm-300/60 bg-warm-100/50 p-4 shadow-card sm:p-5">
+        <div className="relative z-10 flex items-center gap-4">
+          {allStepsCompleted ? (
+            <div className="flex flex-1 items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-warm-500 shadow-sm ring-1 ring-warm-300/50">
+                <PartyPopper className="h-4 w-4" strokeWidth={2} />
+              </span>
+              <div className="min-w-0">
+                <h2 className="font-sans text-sm font-bold tracking-tight text-ink sm:text-base">
+                  עשית את זה! סיימת את מסע הקפאת הביציות שלך 💛
+                </h2>
+                <p className="mt-0.5 text-xs leading-relaxed text-ink/60 sm:text-sm">
+                  כל הכבוד — אפשר לעקוב אחרי הבדיקות והמידע הנוסף בתפריט הצד.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-1 flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-warm-500 shadow-sm ring-1 ring-warm-300/50">
+                  {nextStep ? <nextStep.icon className="h-4 w-4" strokeWidth={2} /> : null}
                 </span>
-                <div>
-                  <h2 className="font-sans text-base font-bold tracking-tight text-ink sm:text-lg">
-                    עשית את זה! סיימת את מסע הקפאת הביציות שלך 💛
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-ink/50">השלב הבא שלך</p>
+                  <h2 className="mt-0.5 truncate font-sans text-sm font-bold tracking-tight text-ink sm:text-base">
+                    {nextStep?.title}
                   </h2>
-                  <p className="mt-0.5 text-sm leading-relaxed text-ink/60">
-                    כל הכבוד — אפשר לעקוב אחרי הבדיקות והמידע הנוסף בתפריט הצד.
-                  </p>
                 </div>
               </div>
-            ) : (
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-warm-500 shadow-sm ring-1 ring-warm-300/50">
-                    {nextStep ? <nextStep.icon className="h-5 w-5" strokeWidth={2} /> : null}
-                  </span>
-                  <div>
-                    <p className="text-xs font-semibold text-ink/50">השלב הבא שלך</p>
-                    <h2 className="mt-0.5 font-sans text-base font-bold tracking-tight text-ink sm:text-lg">
-                      {nextStep?.title}
-                    </h2>
-                    <p className="mt-1 max-w-md text-sm leading-relaxed text-ink/65">
-                      {nextStep?.shortDescription}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => nextStep && openStepAndScroll(nextStep.id)}
-                  className="group inline-flex shrink-0 items-center gap-1.5 self-start rounded-full bg-white px-4 py-2.5 text-sm font-bold text-teal-700 shadow-sm ring-1 ring-warm-300/50 transition-colors hover:bg-teal-50 sm:self-center"
-                >
-                  פתחי את השלב
-                  <ArrowLeft
-                    className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1"
-                    strokeWidth={2.5}
-                  />
-                </button>
-              </div>
-            )}
-          </div>
+              <button
+                type="button"
+                onClick={() => nextStep && openStepAndScroll(nextStep.id)}
+                className="group inline-flex shrink-0 items-center gap-1.5 self-start rounded-full bg-white px-3.5 py-2 text-sm font-bold text-teal-700 shadow-sm ring-1 ring-warm-300/50 transition-colors hover:bg-teal-50 sm:self-center"
+              >
+                פתחי את השלב
+                <ArrowLeft
+                  className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1"
+                  strokeWidth={2.5}
+                />
+              </button>
+            </div>
+          )}
 
-          {/* התרנגולת עם מפת המסלול — מחליפה את איור הפרח העדין שהיה כאן; מלווה
-              את תחושת ההתקדמות, לא מסמנת סיום (זו שמורה לתרנגולת עם הגביע,
-              שתתווסף בעתיד רק אחרי שלב השאיבה) */}
-          <div className="mt-4 flex justify-center lg:mt-0 lg:shrink-0 lg:justify-end">
+          {/* התרנגולת עם מפת המסלול — קטנה ומוצמדת לצד בכרטיס הקומפקטי הזה */}
+          <div className="hidden shrink-0 sm:block">
             <HenIllustration
               name={allStepsCompleted ? "step-trophy" : "roadmap"}
-              sizeClassName="w-36 sm:w-40 lg:w-56"
+              sizeClassName="w-16 lg:w-20"
             />
           </div>
         </div>
