@@ -22,7 +22,8 @@ export type HenName =
   | "step-injections"
   | "step-retrieval"
   | "step-trophy"
-  | "step-requirements";
+  | "step-requirements"
+  | "retrieval-day-bag";
 
 interface HenConfig {
   file: string;
@@ -101,6 +102,15 @@ const HENS: Record<HenName, HenConfig> = {
     file: "checklist/hen-step-requirements.png",
     alt: "תרנגולת מסמנת וי על גבי רשימת בדיקות בלוח קליפ, מייצגת השלמת דרישות היחידה",
     defaultSizeClassName: "w-[78px] sm:w-24 lg:w-[112px]",
+  },
+  // כרטיס "יום השאיבה" ב"מידע ומדריכים" — איור נפרד משתי הסדרות הקודמות,
+  // בגודל התואם לכרטיס-תוכן ראשי (כמו learning/costs/tests), לא לגודל
+  // הקומפקטי של כרטיסי הצ'קליסט. טווח הגודל המדויק שהתבקש: מובייל
+  // 150–190px, דסקטופ 230–280px.
+  "retrieval-day-bag": {
+    file: "hen-retrieval-day-bag.png",
+    alt: "תרנגולת מגיעה מוכנה ליום שאיבת הביציות עם תיק ובו ציוד שימושי",
+    defaultSizeClassName: "w-[150px] sm:w-[190px] lg:w-[260px]",
   },
 };
 
