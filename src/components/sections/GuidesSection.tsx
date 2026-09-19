@@ -1,55 +1,40 @@
-"use client";
-
-import { useCallback, useRef, useState } from "react";
-import RetrievalDayCard from "@/components/guides/RetrievalDayCard";
+import HenIllustration from "@/components/hens/HenIllustration";
 import RetrievalDayGuide from "@/components/guides/RetrievalDayGuide";
-
-const RETRIEVAL_GUIDE_PANEL_ID = "retrieval-day-guide";
+import { retrievalDayFull } from "@/data/retrievalDayGuide";
 
 /**
- * "יום השאיבה" (לשעבר "מידע ומדריכים") — צומצם בכוונה לסקשן ממוקד יחיד:
- * הכרטיסייה הראשית + המדריך המורחב של יום השאיבה (RetrievalDayCard/
- * RetrievalDayGuide + src/data/retrievalDayGuide.ts), בלי כותרת/פתיח גנריים
- * מעליה (כותרת "יום השאיבה" שבתוך הכרטיסייה עצמה משמשת ככותרת האזור).
+ * "יום השאיבה" (לשעבר "מידע ומדריכים") — עמוד אחיד אחד, בלי כרטיסיית
+ * טיזר נפרדת ובלי מנגנון פתיחה/סגירה: כותרת+פתיח באותו דפוס פריסה כמו
+ * שאר עמודי האתר (טקסט מול איור התרנגולת), ומיד אחריהם כל תוכן המדריך
+ * גלוי תמיד (RetrievalDayGuide — ציר זמן, רשימת ציוד, טיפים, אחרי השאיבה).
  *
- * ⚠️ הוסרו במכוון מכאן (לפי בקשת המשתמשת): כרטיס "ומה יקרה אם תרצי
- * להשתמש בביציות בעתיד?" (התוכן לא נשמר/הועבר לשום מקום אחר באתר — הוסר
- * כליל), וקישורי "קישור מהיר" ל-#my-chances/#where-to-go (כבר נגישים דרך
- * ה-navbar, כפילות מיותרת). `epilogueItems`/`EpilogueCard` נשארו בקוד בלי
- * שימוש חי (עדיין מיובאים ע"י `RoadmapExperience.tsx` היתום הקיים), בהתאם
- * לתקדים הקיים בפרויקט של לא למחוק קבצים יתומים.
+ * ⚠️ RetrievalDayCard.tsx (כרטיסיית הטיזר עם הכפתור "למדריך המלא")
+ * שהיה כאן קודם — נמחקה לגמרי (לא רק הוצאה משימוש): נוצרה באותו סבב
+ * עבודה, לא הייתה בשימוש בשום מקום אחר, והתייתרה כליל ברגע שהמדריך גלוי
+ * תמיד ולא צריך "להיפתח". `epilogueItems`/`EpilogueCard` נשארו בקוד בלי
+ * שימוש חי (עדיין מיובאים ע"י `RoadmapExperience.tsx` היתום הקיים) —
+ * בהתאם לתקדים הקיים בפרויקט של לא למחוק קבצים יתומים ותיקים.
  */
 export default function GuidesSection() {
-  const [guideOpen, setGuideOpen] = useState(false);
-  const guideTitleRef = useRef<HTMLHeadingElement>(null);
-
-  const handleToggleGuide = useCallback(() => {
-    const willOpen = !guideOpen;
-    setGuideOpen(willOpen);
-    if (!willOpen) return;
-    // גלילה עדינה לתחילת המדריך — רק אם היא אינה נראית כרגע במסך, לא בכל
-    // פתיחה (בקשה מפורשת: לא לגרור את העין למקום שכבר נראה טוב).
-    requestAnimationFrame(() => {
-      const el = guideTitleRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const alreadyVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
-      if (!alreadyVisible) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    });
-  }, [guideOpen]);
-
   return (
     <div className="print-stack animate-fadeUp">
-      <RetrievalDayCard open={guideOpen} onToggle={handleToggleGuide} panelId={RETRIEVAL_GUIDE_PANEL_ID} />
-      {guideOpen && (
-        <RetrievalDayGuide
-          panelId={RETRIEVAL_GUIDE_PANEL_ID}
-          onClose={handleToggleGuide}
-          titleRef={guideTitleRef}
-        />
-      )}
+      <section className="lg:flex lg:items-center lg:justify-between lg:gap-8">
+        <div className="min-w-0">
+          <h1 className="font-sans text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">
+            יום השאיבה
+          </h1>
+          <p className="mt-1.5 max-w-lg text-sm leading-relaxed text-ink/60 sm:text-base">
+            {retrievalDayFull.intro}
+          </p>
+        </div>
+
+        {/* התרנגולת עם התיק — מוצגת במובייל אחרי הכותרת והתקציר, ובדסקטופ בצד הנגדי לטקסט */}
+        <div className="no-print mt-4 flex justify-center lg:mt-0 lg:shrink-0 lg:justify-end">
+          <HenIllustration name="retrieval-day-bag" blob="mint" />
+        </div>
+      </section>
+
+      <RetrievalDayGuide />
     </div>
   );
 }
