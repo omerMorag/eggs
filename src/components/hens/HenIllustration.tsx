@@ -21,7 +21,8 @@ export type HenName =
   | "step-monitoring"
   | "step-injections"
   | "step-retrieval"
-  | "step-trophy";
+  | "step-trophy"
+  | "step-requirements";
 
 interface HenConfig {
   file: string;
@@ -95,6 +96,11 @@ const HENS: Record<HenName, HenConfig> = {
     file: "checklist/hen-step-trophy.png",
     alt: "תרנגולת מרימה גביע עם ביצה מוזהבת, לציון השלמת כל שלבי התהליך",
     defaultSizeClassName: "w-36 sm:w-40 lg:w-56",
+  },
+  "step-requirements": {
+    file: "checklist/hen-step-requirements.png",
+    alt: "תרנגולת מסמנת וי על גבי רשימת בדיקות בלוח קליפ, מייצגת השלמת דרישות היחידה",
+    defaultSizeClassName: "w-[78px] sm:w-24 lg:w-[112px]",
   },
 };
 

@@ -137,8 +137,8 @@ export default function TestChecklist({
                   <Icon className="h-4 w-4" strokeWidth={2} />
                 </span>
 
-                <label htmlFor={checkboxId} className="min-w-0 flex-1 cursor-pointer">
-                  <span className="flex flex-wrap items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <label htmlFor={checkboxId} className="flex flex-wrap items-center gap-2 cursor-pointer">
                     <span className="text-sm font-semibold text-ink sm:text-base">{test.title}</span>
                     {isDone && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-teal-100 px-2 py-0.5 text-[11px] font-bold text-teal-700 ring-1 ring-inset ring-teal-200/60">
@@ -146,22 +146,22 @@ export default function TestChecklist({
                         הושלם
                       </span>
                     )}
-                  </span>
-                </label>
+                  </label>
 
-                <button
-                  type="button"
-                  onClick={() => toggleOpen(test.id)}
-                  aria-expanded={isOpen}
-                  aria-controls={panelId}
-                  aria-label={isOpen ? "סגירת פרטי הבדיקה" : "פתיחת פרטי הבדיקה"}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink/50 transition-colors hover:bg-mist-100"
-                >
-                  <ChevronDown
-                    className={`h-4 w-4 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
-                    strokeWidth={2.25}
-                  />
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleOpen(test.id)}
+                    aria-expanded={isOpen}
+                    aria-controls={panelId}
+                    className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-teal-700 transition-colors hover:text-teal-800 sm:text-sm"
+                  >
+                    <ChevronDown
+                      className={`h-3.5 w-3.5 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+                      strokeWidth={2.5}
+                    />
+                    {isOpen ? "הסתרת פרטים נוספים" : "פרטים נוספים"}
+                  </button>
+                </div>
               </div>
 
               {test.subItems && test.subItems.length > 0 && (
