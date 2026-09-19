@@ -7,6 +7,14 @@ import StepList from "@/components/dashboard/StepList";
 import PrintButton from "@/components/dashboard/PrintButton";
 import ResetButton from "@/components/dashboard/ResetButton";
 import HenIllustration from "@/components/hens/HenIllustration";
+import CompletionCelebration from "@/components/completion/CompletionCelebration";
+import ScrollToCompletionHint from "@/components/completion/ScrollToCompletionHint";
+
+/** הודעה ל-aria-live="polite" כשכל 7 השלבים הושלמו — לא נשמרה מילה במילה
+ *  בעקבות דחיסת השיחה; נוסחה כאן בהתאמה לדרישה (הכרזה נגישה על מסך הסיום
+ *  שנוסף בהמשך העמוד), קל לעדכן אם צריך ניסוח אחר. */
+const JOURNEY_COMPLETE_ANNOUNCEMENT =
+  "כל הכבוד! השלמת את כל שלבי המסלול. מסך סיום מיוחד ממתין לך בהמשך העמוד.";
 
 interface RoadmapSectionProps {
   progress: JourneyProgress;
@@ -52,8 +60,19 @@ export default function RoadmapSection({ progress, openStepId, onOpenStep }: Roa
 
   const { nextStep, allStepsCompleted, hasAnyProgress, doneStepsCount, totalSteps } = progress;
 
+  // מקור האמת היחיד לסיום המסלול: אותו allStepsCompleted קיים מ-useJourneyProgress
+  // (doneStepsCount === totalSteps, 7 השלבים הראשיים בלבד — לא כולל בדיקות).
+  // כינוי שם בלבד לצורך קריאות, בלי state/מנגנון התקדמות חדש.
+  const isJourneyComplete = allStepsCompleted;
+
   return (
     <div className="print-stack">
+      {/* הכרזה נגישה — אלמנט קבוע תמיד ב-DOM (לא מותנה-קיום), רק תוכנו
+          מתחלף; אמין יותר לקוראי מסך מאשר להרכיב אזור aria-live שממלא
+          תוכן כבר במעמד ההצגה הראשונה שלו */}
+      <p className="sr-only" aria-live="polite">
+        {isJourneyComplete ? JOURNEY_COMPLETE_ANNOUNCEMENT : ""}
+      </p>
       {/* כרטיס "השלב הבא שלך" — קומפקטי בכוונה: זהו כעת האלמנט הראשון באזור
           המסלול (נכנסים אליו ישירות ממסך הפתיחה), ולכן לא מיועד "לדחוף" את
           הצ'קליסט רחוק מדי מטה */}
@@ -114,7 +133,10 @@ export default function RoadmapSection({ progress, openStepId, onOpenStep }: Roa
           בעבר בראש העמוד; עברו לכאן כדי לשמש ככותרת האזור של הצ'קליסט עצמו */}
       <section className="mt-6 animate-fadeUp flex flex-col gap-3 sm:mt-8 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="font-sans text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
+          <h2
+            id="roadmap-title"
+            className="font-sans text-xl font-extrabold tracking-tight text-ink sm:text-2xl"
+          >
             המסלול האישי שלך
           </h2>
           <p className="mt-1.5 max-w-lg text-sm leading-relaxed text-ink/60 sm:text-base">
@@ -148,6 +170,14 @@ export default function RoadmapSection({ progress, openStepId, onOpenStep }: Roa
           setRowRef={setRowRef}
         />
       </section>
+
+      {/* מסך הסיום החגיגי — רק כשכל 7 השלבים הושלמו. mount/unmount מותנה
+          (לא רק הסתרה ב-CSS) בכוונה: אם משתמשת מבטלת סימון שלב אחרי
+          שסיימה, המסך והרמז נעלמים; אם היא משלימה שוב, ה-unmount/mount
+          המלא מאפס גם את מצב האנימציה הפנימי (useCelebrationTrigger),
+          כך שהרצף החגיגי יתנגן מחדש מההתחלה — נשקל כרצוי, לא כתקלה. */}
+      {isJourneyComplete && <ScrollToCompletionHint />}
+      {isJourneyComplete && <CompletionCelebration />}
     </div>
   );
 }

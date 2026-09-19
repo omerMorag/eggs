@@ -69,6 +69,119 @@ input:focus-visible {
   height: 100svh;
 }
 
+/* אותו רעיון כמו h-screen-safe, אך כ-min-height (לא height קבוע) — למסך
+   שצריך להרגיש "מסך מלא" אך שתוכנו יכול להיות גבוה ממסך אחד בפועל
+   (למשל בטלפון קטן עם תוכן ארוך), בלי לחתוך אותו. סדר ההצהרות זהה בכוונה
+   ל-h-screen-safe הקיים: 100vh כ-fallback רחב, ואז 100svh (הגובה היציב)
+   כברירת מחדל בדפדפנים תומכים. */
+.min-h-screen-safe {
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+/* --- אנימציית מסך הסיום (CompletionCelebration) ---
+   כל ה-keyframes מוגדרים כאן כ-CSS גולמי (לא דרך tailwind.config.ts) כי הם
+   מוחלים ברכיב באמצעות style.animation inline (כדי לשלב כמה אנימציות על
+   אותו אלמנט עם עיכובים שונים, ולתת לכל חלקיק דקורטיבי עיכוב משלו) —
+   מחרוזת inline כזו לא נסרקת ע"י ה-JIT של Tailwind, ולכן ה-keyframes
+   חייבים להיות קיימים כ-CSS רגיל כאן מראש, אחרת השם לא היה מוגדר בפועל
+   ב-CSS המקומפל. כל האנימציות transform/opacity בלבד (לא width/height/top),
+   וכולן חד-פעמיות (fill-mode: both, בלי infinite) פרט לרמז הגלילה עצמו
+   שמשתמש ב-animate-bounce הקיים של Tailwind. */
+@keyframes henArrive {
+  0% {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(-6px);
+  }
+  75% {
+    transform: translateY(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes henWobble {
+  0%,
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+  30% {
+    transform: rotate(-2.5deg) scale(1.03);
+  }
+  65% {
+    transform: rotate(2deg) scale(1.02);
+  }
+}
+
+@keyframes cloudPulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  35% {
+    opacity: 0.95;
+    transform: scale(1);
+  }
+  70% {
+    opacity: 0.85;
+    transform: scale(1.12);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+@keyframes flakeDrift {
+  0% {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.6) rotate(0deg);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(2px) scale(1) rotate(20deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.7) rotate(55deg);
+  }
+}
+
+@keyframes sparklePulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+@keyframes confettiFall {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) rotate(0deg);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(92px) rotate(200deg);
+  }
+}
+
 @media print {
   html,
   body {
@@ -76,6 +189,12 @@ input:focus-visible {
   }
 
   .no-print {
+    display: none !important;
+  }
+
+  /* רשת ביטחון נוספת מעבר ל-no-print — מסך הסיום החגיגי לעולם לא אמור
+     להופיע בהדפסה/PDF, גם אם ה-class no-print יוסר ממנו בטעות בעתיד. */
+  #completion-celebration {
     display: none !important;
   }
 
