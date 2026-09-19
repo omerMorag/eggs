@@ -25,17 +25,25 @@ export default function MyChancesSection() {
   return (
     <div className="print-stack animate-fadeUp">
       {/* 1. כותרת ופתיח קצר */}
-      <section>
-        <h1 className="font-sans text-2xl font-extrabold leading-tight tracking-tight text-ink sm:text-3xl">
-          מה הסיכוי שלי?
-        </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink/70 sm:text-base">
-          בחרי את הגיל שבו הוקפאו הביציות ואת מספר הביציות הבשלות שהוקפאו, וקבלי הערכה
-          סטטיסטית לסיכוי ללידת חי.
-        </p>
-        <p className="mt-2 max-w-2xl text-xs leading-relaxed text-ink/50 sm:text-sm">
-          החישוב הוא הערכה כללית המבוססת על נתונים מחקריים, ואינו תחזית רפואית אישית.
-        </p>
+      <section className="lg:flex lg:items-center lg:justify-between lg:gap-8">
+        <div className="min-w-0 flex-1">
+          <h1 className="font-sans text-2xl font-extrabold leading-tight tracking-tight text-ink sm:text-3xl">
+            מה הסיכוי שלי?
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink/70 sm:text-base">
+            בחרי את הגיל שבו הוקפאו הביציות ואת מספר הביציות הבשלות שהוקפאו, וקבלי הערכה
+            סטטיסטית לסיכוי ללידת חי.
+          </p>
+          <p className="mt-2 max-w-2xl text-xs leading-relaxed text-ink/50 sm:text-sm">
+            החישוב הוא הערכה כללית המבוססת על נתונים מחקריים, ואינו תחזית רפואית אישית.
+          </p>
+        </div>
+
+        {/* התרנגולת עם הגרף — עברה לכאן, לראש העמוד, כדי להיות עקבית עם שאר
+            הדפים (הבדיקות שלי / איפה כדאי לעשות / כמה יעלה לי / מידע ומדריכים) */}
+        <div className="mt-4 flex justify-center lg:mt-0 lg:shrink-0 lg:justify-end">
+          <HenIllustration name="statistics" blob="mint" />
+        </div>
       </section>
 
       {/* 2-3. המחשבון + התוצאה — בדיוק כפי שהם, בלי שום שינוי בפונקציונליות */}
@@ -45,19 +53,10 @@ export default function MyChancesSection() {
 
       {/* 4. טבלת "אותו מספר ביציות – גיל שונה" */}
       <section className="mt-10 sm:mt-14">
-        <div className="lg:flex lg:items-center lg:justify-between lg:gap-8">
-          <div className="min-w-0 flex-1">
-            <SectionHeading icon={BarChart3} title="אותו מספר ביציות – גיל שונה" />
-            <p className="mb-4 text-sm leading-relaxed text-ink/70 sm:text-[15px]">
-              הטבלה ממחישה בקצרה עד כמה הגיל בזמן ההקפאה משפיע על ההערכה.
-            </p>
-          </div>
-
-          {/* התרנגולת עם הגרף העולה — לצד הכותרת, לא בתוך הטבלה עצמה (הטבלה עם הנתונים האמיתיים נשארת ללא שינוי) */}
-          <div className="mb-4 flex justify-center lg:mb-0 lg:shrink-0 lg:justify-end">
-            <HenIllustration name="statistics" blob="mint" />
-          </div>
-        </div>
+        <SectionHeading icon={BarChart3} title="אותו מספר ביציות – גיל שונה" />
+        <p className="mb-4 text-sm leading-relaxed text-ink/70 sm:text-[15px]">
+          הטבלה ממחישה בקצרה עד כמה הגיל בזמן ההקפאה משפיע על ההערכה.
+        </p>
         <IllustrativeAgeTable />
       </section>
 
