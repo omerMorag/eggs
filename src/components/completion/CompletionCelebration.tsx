@@ -205,15 +205,38 @@ export default function CompletionCelebration() {
                 fill
                 sizes={HEN_BOX_SIZES}
                 className="object-contain"
+                style={{ filter: "saturate(1.15) brightness(1.05)" }}
                 onError={() => setSummerSrc(WINTER_HEN_SRC)}
               />
             </div>
 
-            {/* הענן — מבליח פעם אחת בדיוק סביב רגע ההחלפה, "מכסה" אותה */}
+            {/* הבזק חם ("revealGlow") בדיוק ברגע ההחלפה — עוזר לרגע להרגיש
+                כמו "קרה משהו" גם כשתמונת הקיץ עוד לא הועלתה (fallback זהה
+                לחורפית). ⚠️ transform באנימציה עצמה מכיל translate(-50%,-50%)
+                יחד עם ה-scale (לא רק scale) — ראו הערה ב-globals.css למה זה
+                קריטי: אנימציית CSS דורסת את כל ה-transform, כולל מיקום
+                שהוגדר ע"י מחלקת Tailwind, ולא רק את החלק שה-keyframe "מתכוון"
+                לשנות. */}
             {play && (
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute left-1/2 top-[38%] aspect-[3/2] w-[85%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
+                className="pointer-events-none absolute left-1/2 top-1/2 aspect-square w-[70%] rounded-full"
+                style={{
+                  background: `radial-gradient(circle, ${BUTTER_YELLOW}cc 0%, transparent 70%)`,
+                  animation: "revealGlow 750ms ease-out 550ms both",
+                }}
+              />
+            )}
+
+            {/* הענן — מבליח פעם אחת בדיוק סביב רגע ההחלפה, "מכסה" אותה.
+                כנ"ל: ה-translate נמצא בתוך ה-keyframe עצמו (cloudPulse
+                ב-globals.css), לא כמחלקת Tailwind נפרדת — זה בדיוק התיקון
+                לבאג שבו הענן "קפץ" הצידה במקום להישאר ממורכז על התרנגולת
+                לאורך כל האנימציה. */}
+            {play && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute left-1/2 top-[38%] aspect-[3/2] w-[92%] rounded-full bg-white"
                 style={{ animation: "cloudPulse 900ms ease-out 500ms both" }}
               />
             )}
@@ -253,9 +276,14 @@ export default function CompletionCelebration() {
                 />
               ))}
 
-            {/* קונפטי — נופל אחרי זריחת השמש */}
+            {/* קונפטי — נופל אחרי זריחת השמש. כל חלקיק שני מסתובב בכיוון הפוך
+                (confettiFall/confettiFallReverse לסירוגין, לפי אינדקס) כדי
+                שהנפילה לא תיראה כמו עותק מוכפל של אותה תנועה — ⚠️ ה-rotateDeg
+                שבקונפיגורציה (celebrationParticles.ts) לא משמש כאן כ-transform
+                נפרד, כי היה נדרס לגמרי ע"י ה-transform של ה-keyframe עצמו
+                (אותו באג שתואר ב-cloudPulse למעלה). */}
             {play &&
-              CONFETTI.map((piece) => (
+              CONFETTI.map((piece, index) => (
                 <span
                   key={piece.id}
                   aria-hidden="true"
@@ -264,10 +292,9 @@ export default function CompletionCelebration() {
                     left: `${piece.leftPercent}%`,
                     top: "-4%",
                     width: piece.sizePx,
-                    height: piece.sizePx * 2.2,
+                    height: piece.sizePx * 2.4,
                     backgroundColor: piece.color,
-                    animation: `confettiFall ${piece.durationMs}ms ease-in ${piece.delayMs}ms both`,
-                    transform: `rotate(${piece.rotateDeg}deg)`,
+                    animation: `${index % 2 === 0 ? "confettiFall" : "confettiFallReverse"} ${piece.durationMs}ms ease-in ${piece.delayMs}ms both`,
                   }}
                 />
               ))}

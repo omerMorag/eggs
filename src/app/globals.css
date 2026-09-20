@@ -112,29 +112,55 @@ input:focus-visible {
     transform: rotate(0deg) scale(1);
   }
   30% {
-    transform: rotate(-2.5deg) scale(1.03);
+    transform: rotate(-4deg) scale(1.06);
   }
   65% {
-    transform: rotate(2deg) scale(1.02);
+    transform: rotate(3deg) scale(1.04);
   }
 }
 
+/* חשוב: transform כאן חייב לכלול את ה-translate(-50%, -50%) של המיקום
+   (ולא רק scale) — אלמנט הענן ב-CompletionCelebration.tsx ממוקם ב-
+   left-1/2/top-1/2 וממורכז ע"י אותו translate; מכיוון שאנימציית CSS דורסת
+   את כל ערך ה-transform (לא ממזגת עם transform שהוגדר בכל מקום אחר, כולל
+   מחלקת Tailwind), keyframe שמכיל רק scale() היה "שוכח" את ה-centering
+   ברגע שהאנימציה מתחילה וגורם לענן לקפוץ הצידה — זה בדיוק מה שקרה בבדיקה
+   החזותית. כל keyframe אחר כאן שרץ על אלמנט הממוקם ע"י translate צריך
+   לשמור על אותו עיקרון. */
 @keyframes cloudPulse {
   0% {
     opacity: 0;
-    transform: scale(0.5);
+    transform: translate(-50%, -50%) scale(0.5);
   }
   35% {
-    opacity: 0.95;
-    transform: scale(1);
+    opacity: 0.98;
+    transform: translate(-50%, -50%) scale(1.05);
   }
   70% {
-    opacity: 0.85;
-    transform: scale(1.12);
+    opacity: 0.92;
+    transform: translate(-50%, -50%) scale(1.22);
   }
   100% {
     opacity: 0;
-    transform: scale(1.35);
+    transform: translate(-50%, -50%) scale(1.5);
+  }
+}
+
+/* "הבזק" חם סביב התרנגולת בדיוק ברגע ההחלפה (חופף לענן) — נותן רמז ברור
+   ש"קרה משהו" גם אם שתי התמונות עדיין זהות (fallback, עד שתועלה תמונת
+   הקיץ האמיתית) */
+@keyframes revealGlow {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.6);
+  }
+  45% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.7);
   }
 }
 
@@ -179,6 +205,25 @@ input:focus-visible {
   100% {
     opacity: 0;
     transform: translateY(92px) rotate(200deg);
+  }
+}
+
+/* סיבוב הפוך (נגד כיוון השעון) — כל חלקיק קונפטי שני משתמש בזה במקום
+   ב-confettiFall, כדי שהנפילה לא תיראה כמו עותק מוכפל של אותה תנועה
+   בדיוק (שני keyframes סטטיים, לא ערך rotate שהיה משתנה per-piece — ראו
+   הערה ב-cloudPulse למעלה על למה ערך transform ב-inline style לא היה
+   משפיע כאן בכלל אחרי שה-animation מתחיל) */
+@keyframes confettiFallReverse {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) rotate(0deg);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(92px) rotate(-200deg);
   }
 }
 
