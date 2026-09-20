@@ -121,6 +121,20 @@ export default function StoriesSection() {
           אין דרך אחת לעבור את התהליך. כאן אפשר לקרוא חוויות אמיתיות, לקבל פרספקטיבה ולהרגיש קצת פחות לבד.
         </p>
 
+        {/* באנר קהילתי — ארבע תרנגולות מתכרבלות יחד, שונה במהותו מאיורי התרנגולת
+            הבודדת שבשאר העמודים (סצנה רחבה עם רקע מלא, לא מסקוט בודד על רקע
+            שקוף), ולכן מוצג כבאנר רוחב-מלא עם פינות מעוגלות במקום כאיור צדדי
+            קטן ליד הכותרת — מתאים יותר לתוכן (חום/קהילתיות) ולצורת התמונה (יחס
+            רוחב-גובה 3:2). */}
+        <div className="mt-5 overflow-hidden rounded-2xl shadow-card">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/hens/hen-stories-group.png"
+            alt="ארבע תרנגולות מתכרבלות יחד בבגדי חורף חמים, אחת מהן משתפת בסיפור עם בועת דיבור שמסמלת אהבה וחום בתוך הקור"
+            className="h-48 w-full object-cover sm:h-64 lg:h-72"
+          />
+        </div>
+
         <button
           type="button"
           onClick={handleShareClick}

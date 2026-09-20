@@ -59,9 +59,15 @@ const HENS: Record<HenName, HenConfig> = {
     defaultSizeClassName: "w-36 sm:w-40 lg:w-56",
   },
   tests: {
+    // hen-tests.png יחס-ממדים 700×936 (≈0.75) — צר וגבוה משמעותית משאר איורי
+    // כותרות האזורים (שנעים סביב 0.81–0.86), ולכן באותה מחלקת-רוחב שהייתה
+    // כאן קודם (w-36 sm:w-40 lg:w-56, זהה ל-costs/choose-clinic/consultation)
+    // הוא יצא גבוה בפועל ב-~10% מהם — זה מה שנראה "גדול מדי" בהשוואה לשאר
+    // העמודים. הרוחב כאן הוקטן בהתאם (יחסית לגובה, לא רק "מספר קטן יותר")
+    // כדי שהגובה המוצג בפועל ייצא כמעט זהה לשאר איורי כותרות העמודים.
     file: "hen-tests.png",
     alt: "תרנגולת מחזיקה מבחנת דם ורשימת בדיקות",
-    defaultSizeClassName: "w-36 sm:w-40 lg:w-56",
+    defaultSizeClassName: "w-32 sm:w-36 lg:w-52",
   },
   roadmap: {
     file: "hen-roadmap.png",
