@@ -1,8 +1,17 @@
 "use client";
 
 import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { probabilityAtLeastK } from "@/data/chanceModel";
+import { formatChancePercent, probabilityAtLeastK } from "@/data/chanceModel";
 import type { FamilyGoalOption } from "@/data/chanceContent";
+
+// הסיכוי לפי המודל (1 - (1-q)^n) הוא אסימפטוטי ואף פעם לא מגיע בפועל ל-100%,
+// אבל עבור גיל צעיר ומספר ביציות גבוה הוא יכול לצאת קרוב אליו עד כדי טעויות
+// עיגול (למשל 99.9999999%). אותו עיקרון בדיוק כבר קיים ב-ChanceResult.tsx
+// (המעגל שם עוצר ב-Math.min(probability, 0.99), והטקסט משתמש ב-
+// formatChancePercent שמציג "מעל 99%" ולא "100%") — כאן מיושם אותו תיקון
+// לגרף עצמו: גובה הקו על הציר מוגבל חזותית ל-99%, כדי שהקו לעולם לא ייגע
+// בקו הרשת של 100% ולא ייצור רושם מוטעה של ודאות מוחלטת.
+const VISUAL_MAX_PERCENT = 99;
 
 interface ChanceChartProps {
   age: number;
@@ -27,6 +36,11 @@ function xForEggs(eggs: number) {
 function yForPercent(percent: number) {
   return PADDING_TOP + (1 - percent / 100) * plotHeight;
 }
+/** כמו yForPercent, אבל מוגבל ל-VISUAL_MAX_PERCENT — לשימוש בקו/בנקודה
+ *  עצמם (לא בקווי הרשת, שצריכים להישאר ב-0/25/50/75/100 האמיתיים). */
+function yForCurve(percent: number) {
+  return yForPercent(Math.min(percent, VISUAL_MAX_PERCENT));
+}
 
 export default function ChanceChart({ age, eggs, familyGoal }: ChanceChartProps) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -43,15 +57,18 @@ export default function ChanceChart({ age, eggs, familyGoal }: ChanceChartProps)
   const path = useMemo(
     () =>
       points
-        .map((p, i) => `${i === 0 ? "M" : "L"}${xForEggs(p.eggs).toFixed(1)},${yForPercent(p.percent).toFixed(1)}`)
+        .map((p, i) => `${i === 0 ? "M" : "L"}${xForEggs(p.eggs).toFixed(1)},${yForCurve(p.percent).toFixed(1)}`)
         .join(" "),
     [points],
   );
 
-  const currentPercent = probabilityAtLeastK(age, eggs, familyGoal.value) * 100;
+  const currentProbability = probabilityAtLeastK(age, eggs, familyGoal.value);
+  const currentPercentLabel = formatChancePercent(currentProbability);
 
   const activeEggs = hoverEggs ?? eggs;
-  const activePercent = probabilityAtLeastK(age, activeEggs, familyGoal.value) * 100;
+  const activeProbability = probabilityAtLeastK(age, activeEggs, familyGoal.value);
+  const activePercent = activeProbability * 100;
+  const activePercentLabel = formatChancePercent(activeProbability);
 
   const handlePointerMove = (event: ReactPointerEvent<SVGSVGElement>) => {
     const svg = svgRef.current;
@@ -77,7 +94,7 @@ export default function ChanceChart({ age, eggs, familyGoal }: ChanceChartProps)
           onPointerMove={handlePointerMove}
           onPointerLeave={() => setHoverEggs(null)}
           role="img"
-          aria-label={`גרף: הסיכוי המשוער עולה בהדרגה עם מספר הביציות הבשלות, בגיל ${age}. עבור ${eggs} ביציות, הסיכוי המשוער הוא כ-${Math.round(currentPercent)}%.`}
+          aria-label={`גרף: הסיכוי המשוער עולה בהדרגה עם מספר הביציות הבשלות, בגיל ${age}. עבור ${eggs} ביציות, הסיכוי המשוער הוא ${currentPercentLabel}.`}
         >
           {/* קווי רשת אופקיים */}
           {yTicks.map((t) => (
@@ -136,7 +153,7 @@ export default function ChanceChart({ age, eggs, familyGoal }: ChanceChartProps)
           />
           <circle
             cx={xForEggs(activeEggs)}
-            cy={yForPercent(activePercent)}
+            cy={yForCurve(activePercent)}
             r={6}
             fill="#C13655"
             stroke="white"
@@ -148,14 +165,16 @@ export default function ChanceChart({ age, eggs, familyGoal }: ChanceChartProps)
         <div
           className="pointer-events-none absolute rounded-lg border border-mist-200 bg-white px-2.5 py-1.5 text-xs leading-tight text-ink shadow-cardHover"
           style={{
-            top: `${(yForPercent(activePercent) / HEIGHT) * 100}%`,
+            top: `${(yForCurve(activePercent) / HEIGHT) * 100}%`,
             left: `${Math.min(Math.max((xForEggs(activeEggs) / WIDTH) * 100, 8), 82)}%`,
             transform: "translate(-50%, -130%)",
             whiteSpace: "nowrap",
           }}
         >
           <span className="font-bold">{activeEggs} ביציות</span> · גיל {age} ·{" "}
-          <span className="font-bold text-teal-700">כ-{Math.round(activePercent)}%</span>
+          <span className="font-bold text-teal-700">
+            {activePercentLabel.startsWith("מעל") ? activePercentLabel : `כ-${activePercentLabel}`}
+          </span>
         </div>
       </div>
 
