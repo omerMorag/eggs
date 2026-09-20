@@ -130,8 +130,11 @@ export default function StoriesSection() {
             מיחס-הממדים האמיתי של התמונה — ב-object-cover זה גרם לחיתוך אנכי
             משמעותי (מלמעלה ומלמטה, כובעים/רגליים) כדי למלא את המסגרת הרחבה.
             במקום זה — aspect-ratio שמזהה בדיוק את יחס התמונה, כך שהיא תמיד
-            מוצגת במלואה ברוחב מלא בלי חיתוך, בכל רוחב מסך. */}
-        <div className="mt-5 aspect-[1400/933] w-full overflow-hidden rounded-2xl shadow-card">
+            מוצגת במלואה בלי חיתוך, בכל רוחב מסך. הוקטן: רוחב-מלא של עמודת
+            התוכן (עד כ-900px בדסקטופ) היה דומיננטי/גדול מדי כבאנר; עכשיו
+            מוגבל ברוחב מקסימלי וממורכז, כמו שאר האיורים באתר שלא תופסים
+            את כל רוחב העמוד. */}
+        <div className="mx-auto mt-5 aspect-[1400/933] w-full max-w-sm overflow-hidden rounded-2xl shadow-card sm:max-w-md lg:max-w-lg">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/images/hens/hen-stories-group.png"
