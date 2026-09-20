@@ -164,6 +164,26 @@ export default function TestChecklist({
                 </div>
               </div>
 
+              {/* "פרטים נוספים" (test.detail) — ממוקם ישירות מתחת לכפתור שפותח
+                  אותו, לפני מיני-הצ'קליסט וטבלת התאריך/הנחיות שמתחתיו
+                  (שניהם גלויים תמיד ולא חלק מהפתיחה/סגירה). קודם זה היה
+                  הפריט האחרון בכרטיס, כך שהטקסט "נפתח" למטה, מתחת לכל תוכן
+                  הכרטיס — לא מתחת לכפתור עצמו כמו שמצופה מ-accordion. */}
+              <div
+                id={panelId}
+                role="region"
+                aria-hidden={!isOpen}
+                className={`grid transition-all duration-300 ease-in-out ${
+                  isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                }`}
+              >
+                <div className={`min-h-0 overflow-hidden ${isOpen ? "border-t border-mist-100" : ""}`}>
+                  <p className="px-4 py-4 text-xs leading-relaxed text-ink/60 sm:px-5 sm:text-sm">
+                    {test.detail}
+                  </p>
+                </div>
+              </div>
+
               {test.subItems && test.subItems.length > 0 && (
                 <ul className="flex flex-col gap-1.5 border-t border-mist-100 px-4 py-3 sm:px-5">
                   {test.subItems.map((label, index) => {
@@ -245,21 +265,6 @@ export default function TestChecklist({
                   </div>
                 );
               })()}
-
-              <div
-                id={panelId}
-                role="region"
-                aria-hidden={!isOpen}
-                className={`grid transition-all duration-300 ease-in-out ${
-                  isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-                }`}
-              >
-                <div className="min-h-0 overflow-hidden">
-                  <p className="px-4 pb-4 text-xs leading-relaxed text-ink/60 sm:px-5 sm:pb-5 sm:text-sm">
-                    {test.detail}
-                  </p>
-                </div>
-              </div>
             </li>
           );
         })}
