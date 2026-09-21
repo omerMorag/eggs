@@ -15,13 +15,21 @@ async function getUserId(): Promise<string | null> {
 function isValidStoredProgress(value: unknown): value is StoredProgress {
   if (!value || typeof value !== "object") return false;
   const v = value as Record<string, unknown>;
+  const selectedCareUnitValid =
+    v.selectedCareUnit === undefined ||
+    v.selectedCareUnit === null ||
+    (typeof v.selectedCareUnit === "object" &&
+      v.selectedCareUnit !== null &&
+      typeof (v.selectedCareUnit as Record<string, unknown>).id === "string" &&
+      typeof (v.selectedCareUnit as Record<string, unknown>).name === "string");
   return (
     Array.isArray(v.steps) &&
     Array.isArray(v.stepTasks) &&
     Array.isArray(v.tests) &&
     Array.isArray(v.testSubItems) &&
     typeof v.testDates === "object" &&
-    v.testDates !== null
+    v.testDates !== null &&
+    selectedCareUnitValid
   );
 }
 

@@ -19,10 +19,14 @@ export interface StoredProgress {
   testSubItems: string[];
   /** מפתח: testId, ערך: תאריך ביצוע (YYYY-MM-DD) שהוזן ידנית לכל בדיקה */
   testDates: Record<number, string>;
+  /** היחידה שנבחרה בכלי "איפה כדאי לעשות?" (WHERE TO DO 2.0) — null = לא נבחרה/בוטלה בחירה.
+   *  שדה חדש (לא שינוי מבנה קיים) — נתונים ישנים ב-localStorage/Redis פשוט לא כוללים אותו,
+   *  ו-readStorage למטה מתייחס לחסרונו כ-null, בלי צורך במיגרציה אמיתית. */
+  selectedCareUnit: { id: string; name: string } | null;
 }
 
 function emptyProgress(): StoredProgress {
-  return { steps: [], stepTasks: [], tests: [], testSubItems: [], testDates: {} };
+  return { steps: [], stepTasks: [], tests: [], testSubItems: [], testDates: {}, selectedCareUnit: null };
 }
 
 /** "הדבר הבא שלך" — נגזר תמיד מ-completedStepTasks, אין state ידני נפרד
@@ -95,12 +99,21 @@ function readStorage(): StoredProgress {
         if (note?.date) testDates[Number(testId)] = note.date;
       });
     }
+    const selectedCareUnit =
+      parsed.selectedCareUnit &&
+      typeof parsed.selectedCareUnit === "object" &&
+      typeof parsed.selectedCareUnit.id === "string" &&
+      typeof parsed.selectedCareUnit.name === "string"
+        ? { id: parsed.selectedCareUnit.id, name: parsed.selectedCareUnit.name }
+        : null;
+
     return {
       steps: Array.isArray(parsed.steps) ? parsed.steps : [],
       stepTasks: Array.isArray(parsed.stepTasks) ? parsed.stepTasks : [],
       tests: Array.isArray(parsed.tests) ? parsed.tests : [],
       testSubItems: Array.isArray(parsed.testSubItems) ? parsed.testSubItems : [],
       testDates,
+      selectedCareUnit,
     };
   } catch {
     return emptyProgress();
@@ -159,11 +172,14 @@ export function useJourneyProgress() {
   const [completedTestSubItems, setCompletedTestSubItems] = useState<Set<string>>(new Set());
   // מפתח: testId, ערך: תאריך ביצוע שהוזן ידנית לכל בדיקה
   const [testDates, setTestDates] = useState<Record<number, string>>({});
+  // היחידה שנבחרה בכלי "איפה כדאי לעשות?" — ראו StoredProgress.selectedCareUnit
+  const [selectedCareUnit, setSelectedCareUnit] = useState<{ id: string; name: string } | null>(null);
 
   // טעינה חד-פעמית מה-localStorage בצד הלקוח
   useEffect(() => {
     const stored = readStorage();
     setTestDates(stored.testDates);
+    setSelectedCareUnit(stored.selectedCareUnit);
 
     // מיגרציה: נתוני התקדמות ישנים (מלפני תתי-המשימות של Roadmap 2.0) שמרו
     // רק אילו שלבים "הושלמו" כמקשה אחת ב-steps, דרך checkbox ידני יחיד לכל
@@ -214,8 +230,9 @@ export function useJourneyProgress() {
       tests: Array.from(completedTests),
       testSubItems: Array.from(completedTestSubItems),
       testDates,
+      selectedCareUnit,
     });
-  }, [completedSteps, completedStepTasks, completedTests, completedTestSubItems, testDates, hydrated]);
+  }, [completedSteps, completedStepTasks, completedTests, completedTestSubItems, testDates, selectedCareUnit, hydrated]);
 
   // --- סנכרון ענן אופציונלי (Google + Upstash Redis) ---
   // מצב אורחת (לא מחוברת) ממשיך לעבוד בדיוק כמו קודם — כל הלוגיקה כאן פועלת
@@ -257,6 +274,7 @@ export function useJourneyProgress() {
           tests: Array.from(completedTests),
           testSubItems: Array.from(completedTestSubItems),
           testDates,
+          selectedCareUnit,
         });
         return;
       }
@@ -277,10 +295,14 @@ export function useJourneyProgress() {
         if (date) mergedDates[Number(testId)] = date;
       });
 
+      // בחירת יחידה: כמו testDates, נתוני השרת גוברים אם קיימים (ערך אחרון-שנבחר), אחרת נשאר המקומי
+      const mergedSelectedCareUnit = serverData.selectedCareUnit ?? selectedCareUnit;
+
       if (cancelled) return;
       setCompletedStepTasks(mergedStepTasks);
       setCompletedTestSubItems(mergedSubItems);
       setTestDates(mergedDates);
+      setSelectedCareUnit(mergedSelectedCareUnit);
 
       const mergedSteps = Array.from(deriveCompletedSteps(mergedStepTasks));
 
@@ -303,6 +325,7 @@ export function useJourneyProgress() {
         tests: mergedTests,
         testSubItems: Array.from(mergedSubItems),
         testDates: mergedDates,
+        selectedCareUnit: mergedSelectedCareUnit,
       });
     })();
 
@@ -326,13 +349,14 @@ export function useJourneyProgress() {
         tests: Array.from(completedTests),
         testSubItems: Array.from(completedTestSubItems),
         testDates,
+        selectedCareUnit,
       });
     }, 1500);
 
     return () => {
       if (pushTimeoutRef.current) clearTimeout(pushTimeoutRef.current);
     };
-  }, [completedSteps, completedStepTasks, completedTests, completedTestSubItems, testDates, hydrated, userId]);
+  }, [completedSteps, completedStepTasks, completedTests, completedTestSubItems, testDates, selectedCareUnit, hydrated, userId]);
 
   /** מסמנת/מבטלת משימה בודדת בתוך שלב במסלול (Roadmap 2.0). השלב עצמו
    *  מחושב כ"הושלם" אוטומטית (derived) כשכל המשימות שלו מסומנות — אין יותר
@@ -391,10 +415,31 @@ export function useJourneyProgress() {
     });
   }, []);
 
+  /** נבחרת יחידה בכלי "איפה כדאי לעשות?" (WHERE TO DO 2.0, §12). מסמנת גם
+   *  אוטומטית ואידמפוטנטית את משימה 4 בשלב 2 ("בחרתי איפה לעבור את
+   *  התהליך" — steps.ts, journeySteps[1].tasks[4]) אם היא עדיין לא
+   *  מסומנת. בחירה חוזרת/שינוי בחירה לא מבטלת סימון קיים. */
+  const selectCareUnit = useCallback((id: string, name: string) => {
+    setSelectedCareUnit({ id, name });
+    setCompletedStepTasks((prev) => {
+      const key = "2:4";
+      if (prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.add(key);
+      return next;
+    });
+  }, []);
+
+  /** מנקה את הבחירה בלבד — לא מבטלת את סימון המשימה שכבר נעשה (החלטת עיצוב מכוונת, ר' תוכנית WHERE TO DO 2.0) */
+  const clearCareUnitSelection = useCallback(() => {
+    setSelectedCareUnit(null);
+  }, []);
+
   const reset = useCallback(() => {
     setCompletedStepTasks(new Set());
     setCompletedTestSubItems(new Set());
     setTestDates({});
+    setSelectedCareUnit(null);
   }, []);
 
   const totalSteps = journeySteps.length;
@@ -438,10 +483,13 @@ export function useJourneyProgress() {
     completedTests,
     completedTestSubItems,
     testDates,
+    selectedCareUnit,
     toggleStepTask,
     toggleTest,
     toggleTestSubItem,
     updateTestDate,
+    selectCareUnit,
+    clearCareUnitSelection,
     reset,
     totalSteps,
     totalTests,

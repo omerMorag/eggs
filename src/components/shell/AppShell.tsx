@@ -95,7 +95,7 @@ export default function AppShell() {
             <RoadmapSection progress={progress} openStepId={openStepId} onOpenStep={openStep} />
           )}
           {section === "tests" && <TestsSection progress={progress} />}
-          {section === "where-to-go" && <WhereToGoSection />}
+          {section === "where-to-go" && <WhereToGoSection progress={progress} />}
           {section === "my-chances" && <MyChancesSection />}
           {section === "cost-estimator" && <CostEstimatorSection />}
           {section === "stories" && <StoriesSection />}
