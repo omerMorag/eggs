@@ -17,6 +17,7 @@ function isValidStoredProgress(value: unknown): value is StoredProgress {
   const v = value as Record<string, unknown>;
   return (
     Array.isArray(v.steps) &&
+    Array.isArray(v.stepTasks) &&
     Array.isArray(v.tests) &&
     Array.isArray(v.testSubItems) &&
     typeof v.testDates === "object" &&

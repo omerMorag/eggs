@@ -4,18 +4,19 @@ import { journeySteps } from "@/data/steps";
 import StepRow from "./StepRow";
 
 interface StepListProps {
-  completedSteps: Set<number>;
   /** מזהה השלב הפתוח כרגע, או null אם אף שלב לא פתוח — רק שלב אחד פתוח בכל רגע */
   openStepId: number | null;
-  onToggleDone: (id: number) => void;
+  /** מפתחות "stepId:taskIndex" — אילו משימות בכל שלבי המסלול כבר סומנו */
+  completedStepTasks: Set<string>;
+  onToggleTask: (stepId: number, taskIndex: number) => void;
   onToggleExpand: (id: number) => void;
   setRowRef: (id: number, el: HTMLLIElement | null) => void;
 }
 
 export default function StepList({
-  completedSteps,
   openStepId,
-  onToggleDone,
+  completedStepTasks,
+  onToggleTask,
   onToggleExpand,
   setRowRef,
 }: StepListProps) {
@@ -30,9 +31,9 @@ export default function StepList({
     <StepRow
       key={step.id}
       step={step}
-      isDone={completedSteps.has(step.id)}
       isExpanded={openStepId === step.id}
-      onToggleDone={onToggleDone}
+      completedStepTasks={completedStepTasks}
+      onToggleTask={onToggleTask}
       onToggleExpand={onToggleExpand}
       setRowRef={setRowRef}
       hideParallelBadge={hideParallelBadge}

@@ -58,7 +58,13 @@ export default function RoadmapSection({ progress, openStepId, onOpenStep }: Roa
     [onOpenStep]
   );
 
-  const { nextStep, allStepsCompleted, hasAnyProgress, doneStepsCount, totalSteps } = progress;
+  const {
+    nextStep,
+    allStepsCompleted,
+    hasAnyProgress,
+    doneStepTasksCount,
+    totalStepTasksCount,
+  } = progress;
 
   // מקור האמת היחיד לסיום המסלול: אותו allStepsCompleted קיים מ-useJourneyProgress
   // (doneStepsCount === totalSteps, 7 השלבים הראשיים בלבד — לא כולל בדיקות).
@@ -144,8 +150,12 @@ export default function RoadmapSection({ progress, openStepId, onOpenStep }: Roa
           </p>
         </div>
         <div className="no-print flex flex-wrap items-center gap-2">
+          {/* progress הכללי של המסלול מבוסס על סך המשימות שסומנו בכל השלבים
+              (Roadmap 2.0), לא רק על מספר השלבים שהושלמו במלואם — כך
+              "3 מתוך 6 הושלמו" בתוך כל שלב מצטבר לתמונה אמיתית של כמה
+              עשית מתוך המסלול כולו, גם כשאף שלב עדיין לא סומן כהושלם. */}
           <span className="inline-flex items-center rounded-full bg-teal-50 px-3.5 py-1.5 text-sm font-bold text-teal-700 ring-1 ring-inset ring-teal-100">
-            {doneStepsCount} מתוך {totalSteps} שלבים הושלמו
+            {doneStepTasksCount} מתוך {totalStepTasksCount} משימות הושלמו
           </span>
           <PrintButton />
           {hasAnyProgress && <ResetButton onReset={progress.reset} />}
@@ -163,9 +173,9 @@ export default function RoadmapSection({ progress, openStepId, onOpenStep }: Roa
           </h3>
         </div>
         <StepList
-          completedSteps={progress.completedSteps}
           openStepId={openStepId}
-          onToggleDone={progress.toggleStep}
+          completedStepTasks={progress.completedStepTasks}
+          onToggleTask={progress.toggleStepTask}
           onToggleExpand={toggleExpand}
           setRowRef={setRowRef}
         />

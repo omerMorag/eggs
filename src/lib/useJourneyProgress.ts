@@ -9,7 +9,10 @@ import { fetchServerProgress, pushServerProgress } from "@/lib/syncProgress";
 const STORAGE_KEY = "egg-freezing-journey:progress:v1";
 
 export interface StoredProgress {
+  /** נשמר לצורכי תאימות לאחור בלבד — נגזר כעת מ-stepTasks, ראו migration ב-load */
   steps: number[];
+  /** מפתחות בפורמט "stepId:taskIndex" — כל משימה בתוך כל שלב במסלול (Roadmap 2.0) */
+  stepTasks: string[];
   /** נשמר לצורכי תאימות לאחור בלבד — נגזר כעת מ-testSubItems, ראו migration ב-load */
   tests: number[];
   /** מפתחות בפורמט "testId:subIndex" — כל רכיב במיני-הצ'קליסט של כל בדיקה */
@@ -18,13 +21,17 @@ export interface StoredProgress {
   testDates: Record<number, string>;
 }
 
+function emptyProgress(): StoredProgress {
+  return { steps: [], stepTasks: [], tests: [], testSubItems: [], testDates: {} };
+}
+
 function readStorage(): StoredProgress {
   if (typeof window === "undefined") {
-    return { steps: [], tests: [], testSubItems: [], testDates: {} };
+    return emptyProgress();
   }
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { steps: [], tests: [], testSubItems: [], testDates: {} };
+    if (!raw) return emptyProgress();
     const parsed = JSON.parse(raw) as Partial<StoredProgress> & {
       // תאימות לאחור: גרסה קודמת שמרה כאן { date, instructions } לכל בדיקה
       testNotes?: Record<number, { date?: string }>;
@@ -40,12 +47,13 @@ function readStorage(): StoredProgress {
     }
     return {
       steps: Array.isArray(parsed.steps) ? parsed.steps : [],
+      stepTasks: Array.isArray(parsed.stepTasks) ? parsed.stepTasks : [],
       tests: Array.isArray(parsed.tests) ? parsed.tests : [],
       testSubItems: Array.isArray(parsed.testSubItems) ? parsed.testSubItems : [],
       testDates,
     };
   } catch {
-    return { steps: [], tests: [], testSubItems: [], testDates: {} };
+    return emptyProgress();
   }
 }
 
@@ -64,9 +72,39 @@ function subItemCount(testId: number): number {
   return test?.subItems && test.subItems.length > 0 ? test.subItems.length : 1;
 }
 
+/** מספר המשימות בתוך שלב נתון במסלול — לפחות 1 (fallback לשלב בלי tasks מוגדרות) */
+function stepTaskCount(stepId: number): number {
+  const step = journeySteps.find((s) => s.id === stepId);
+  return step?.tasks && step.tasks.length > 0 ? step.tasks.length : 1;
+}
+
+/** בהינתן קבוצת מפתחות "stepId:taskIndex" שסומנו — אילו מזהי שלבים שלמים (כל המשימות שלהם מסומנות) */
+function deriveCompletedSteps(completedStepTasks: Set<string>): Set<number> {
+  const done = new Set<number>();
+  journeySteps.forEach((step) => {
+    const count = stepTaskCount(step.id);
+    let allChecked = true;
+    for (let i = 0; i < count; i += 1) {
+      if (!completedStepTasks.has(`${step.id}:${i}`)) {
+        allChecked = false;
+        break;
+      }
+    }
+    if (allChecked) done.add(step.id);
+  });
+  return done;
+}
+
+/** מוסיפה למערך מפתחות "stepId:taskIndex" את כל המשימות של שלב נתון (migration משלב "הושלם" ישן) */
+function addAllStepTasks(target: Set<string>, stepId: number) {
+  const count = stepTaskCount(stepId);
+  for (let i = 0; i < count; i += 1) target.add(`${stepId}:${i}`);
+}
+
 export function useJourneyProgress() {
   const [hydrated, setHydrated] = useState(false);
-  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  // מפתח כל איבר: `${stepId}:${taskIndex}` — מקור האמת היחיד להתקדמות בשלבי המסלול
+  const [completedStepTasks, setCompletedStepTasks] = useState<Set<string>>(new Set());
   // מפתח כל איבר: `${testId}:${subIndex}` — מקור האמת היחיד להתקדמות בבדיקות
   const [completedTestSubItems, setCompletedTestSubItems] = useState<Set<string>>(new Set());
   // מפתח: testId, ערך: תאריך ביצוע שהוזן ידנית לכל בדיקה
@@ -75,12 +113,17 @@ export function useJourneyProgress() {
   // טעינה חד-פעמית מה-localStorage בצד הלקוח
   useEffect(() => {
     const stored = readStorage();
-    setCompletedSteps(new Set(stored.steps));
     setTestDates(stored.testDates);
 
-    // מיגרציה: נתוני התקדמות ישנים (מלפני המיני-צ'קליסט) שמרו רק אילו בדיקות
-    // "הושלמו" כמקשה אחת ב-tests. כדי לא לאבד את זה, כל בדיקה שהייתה מסומנת
-    // כהושלמה הופכת כעת לבדיקה שכל הרכיבים שלה מסומנים.
+    // מיגרציה: נתוני התקדמות ישנים (מלפני תתי-המשימות של Roadmap 2.0) שמרו
+    // רק אילו שלבים "הושלמו" כמקשה אחת ב-steps, דרך checkbox ידני יחיד לכל
+    // שלב. כדי לא לאבד את זה, כל שלב שהיה מסומן כהושלם הופך כעת לשלב שכל
+    // המשימות שלו מסומנות.
+    const stepTaskSet = new Set(stored.stepTasks);
+    stored.steps.forEach((stepId) => addAllStepTasks(stepTaskSet, stepId));
+    setCompletedStepTasks(stepTaskSet);
+
+    // אותה מיגרציה בדיוק, למבנה הישן של הבדיקות (tests -> testSubItems)
     const subItemSet = new Set(stored.testSubItems);
     stored.tests.forEach((testId) => {
       const count = subItemCount(testId);
@@ -90,6 +133,11 @@ export function useJourneyProgress() {
 
     setHydrated(true);
   }, []);
+
+  const completedSteps = useMemo(
+    () => deriveCompletedSteps(completedStepTasks),
+    [completedStepTasks]
+  );
 
   const completedTests = useMemo(() => {
     const done = new Set<number>();
@@ -112,11 +160,12 @@ export function useJourneyProgress() {
     if (!hydrated) return;
     writeStorage({
       steps: Array.from(completedSteps),
+      stepTasks: Array.from(completedStepTasks),
       tests: Array.from(completedTests),
       testSubItems: Array.from(completedTestSubItems),
       testDates,
     });
-  }, [completedSteps, completedTests, completedTestSubItems, testDates, hydrated]);
+  }, [completedSteps, completedStepTasks, completedTests, completedTestSubItems, testDates, hydrated]);
 
   // --- סנכרון ענן אופציונלי (Google + Upstash Redis) ---
   // מצב אורחת (לא מחוברת) ממשיך לעבוד בדיוק כמו קודם — כל הלוגיקה כאן פועלת
@@ -154,6 +203,7 @@ export function useJourneyProgress() {
         // לשרת אין נתונים עדיין — מעלים את המקומי כמות שהוא
         await pushServerProgress({
           steps: Array.from(completedSteps),
+          stepTasks: Array.from(completedStepTasks),
           tests: Array.from(completedTests),
           testSubItems: Array.from(completedTestSubItems),
           testDates,
@@ -161,9 +211,13 @@ export function useJourneyProgress() {
         return;
       }
 
-      // מיזוג איחוד: סימון לעולם לא "מתבטל" בטעות
-      const mergedSteps = new Set(completedSteps);
-      (serverData.steps ?? []).forEach((id) => mergedSteps.add(id));
+      // מיזוג איחוד: סימון לעולם לא "מתבטל" בטעות. גם נתוני שרת ישנים
+      // (steps/tests בפורמט הישן, מלפני שהיה בהם stepTasks/testSubItems —
+      // למשל התקדמות שסונכרנה ממכשיר אחר לפני שדרוג Roadmap 2.0) עוברים
+      // כאן אותה מיגרציה כמו בטעינה המקומית, כדי לא לאבד אותם.
+      const mergedStepTasks = new Set(completedStepTasks);
+      (serverData.stepTasks ?? []).forEach((key) => mergedStepTasks.add(key));
+      (serverData.steps ?? []).forEach((stepId) => addAllStepTasks(mergedStepTasks, stepId));
 
       const mergedSubItems = new Set(completedTestSubItems);
       (serverData.testSubItems ?? []).forEach((key) => mergedSubItems.add(key));
@@ -174,9 +228,11 @@ export function useJourneyProgress() {
       });
 
       if (cancelled) return;
-      setCompletedSteps(mergedSteps);
+      setCompletedStepTasks(mergedStepTasks);
       setCompletedTestSubItems(mergedSubItems);
       setTestDates(mergedDates);
+
+      const mergedSteps = Array.from(deriveCompletedSteps(mergedStepTasks));
 
       const mergedTests: number[] = [];
       testItems.forEach((test) => {
@@ -192,7 +248,8 @@ export function useJourneyProgress() {
       });
 
       await pushServerProgress({
-        steps: Array.from(mergedSteps),
+        steps: mergedSteps,
+        stepTasks: Array.from(mergedStepTasks),
         tests: mergedTests,
         testSubItems: Array.from(mergedSubItems),
         testDates: mergedDates,
@@ -215,6 +272,7 @@ export function useJourneyProgress() {
     pushTimeoutRef.current = setTimeout(() => {
       pushServerProgress({
         steps: Array.from(completedSteps),
+        stepTasks: Array.from(completedStepTasks),
         tests: Array.from(completedTests),
         testSubItems: Array.from(completedTestSubItems),
         testDates,
@@ -224,13 +282,17 @@ export function useJourneyProgress() {
     return () => {
       if (pushTimeoutRef.current) clearTimeout(pushTimeoutRef.current);
     };
-  }, [completedSteps, completedTests, completedTestSubItems, testDates, hydrated, userId]);
+  }, [completedSteps, completedStepTasks, completedTests, completedTestSubItems, testDates, hydrated, userId]);
 
-  const toggleStep = useCallback((id: number) => {
-    setCompletedSteps((prev) => {
+  /** מסמנת/מבטלת משימה בודדת בתוך שלב במסלול (Roadmap 2.0). השלב עצמו
+   *  מחושב כ"הושלם" אוטומטית (derived) כשכל המשימות שלו מסומנות — אין יותר
+   *  checkbox ידני נפרד לשלב כולו. */
+  const toggleStepTask = useCallback((stepId: number, taskIndex: number) => {
+    setCompletedStepTasks((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      const key = `${stepId}:${taskIndex}`;
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   }, []);
@@ -280,7 +342,7 @@ export function useJourneyProgress() {
   }, []);
 
   const reset = useCallback(() => {
-    setCompletedSteps(new Set());
+    setCompletedStepTasks(new Set());
     setCompletedTestSubItems(new Set());
     setTestDates({});
   }, []);
@@ -290,6 +352,15 @@ export function useJourneyProgress() {
 
   const doneStepsCount = completedSteps.size;
   const doneTestsCount = completedTests.size;
+
+  // סך כל המשימות בכל שלבי המסלול, וכמה מהן מסומנות — משמש לחישוב
+  // "progress הכללי" של המסלול לפי משימות בפועל (Roadmap 2.0), לא רק לפי
+  // מספר השלבים שהושלמו במלואם.
+  const totalStepTasksCount = useMemo(
+    () => journeySteps.reduce((sum, step) => sum + stepTaskCount(step.id), 0),
+    []
+  );
+  const doneStepTasksCount = completedStepTasks.size;
 
   const nextStep = useMemo(
     () => journeySteps.find((step) => !completedSteps.has(step.id)) ?? null,
@@ -308,10 +379,11 @@ export function useJourneyProgress() {
   return {
     hydrated,
     completedSteps,
+    completedStepTasks,
     completedTests,
     completedTestSubItems,
     testDates,
-    toggleStep,
+    toggleStepTask,
     toggleTest,
     toggleTestSubItem,
     updateTestDate,
@@ -320,6 +392,8 @@ export function useJourneyProgress() {
     totalTests,
     doneStepsCount,
     doneTestsCount,
+    totalStepTasksCount,
+    doneStepTasksCount,
     nextStep,
     progressPercent,
     allStepsCompleted,
