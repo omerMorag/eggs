@@ -2,22 +2,7 @@
 
 import { ArrowLeft, Check, ChevronDown } from "lucide-react";
 import type { JourneyStep } from "@/data/types";
-import HenIllustration, { type HenName } from "@/components/hens/HenIllustration";
-
-/**
- * מיפוי שלב -> איור תרנגולת בכרטיס הצ'קליסט עצמו (מחליף את אייקון ה-lucide
- * הגנרי שבחלק מהשלבים). לכל 7 השלבים יש תרנגולת. שלבים 1, 2 ו-4 משתמשים
- * בתרנגולות שכבר קיימות במיפוי המרכזי (משמשות גם באזורים אחרים באתר).
- */
-const STEP_HEN: Partial<Record<number, HenName>> = {
-  1: "tests",
-  2: "choose-clinic",
-  3: "step-requirements",
-  4: "consultation",
-  5: "step-protocol",
-  6: "step-monitoring",
-  7: "step-retrieval",
-};
+import HenIllustration, { STEP_HEN } from "@/components/hens/HenIllustration";
 
 /** גודל אחיד לכל תרנגולת שמופיעה בתוך כרטיס צ'קליסט — כ-70–85px במובייל,
  * כ-100–120px בדסקטופ, ללא תלות בגודל ברירת המחדל של אותה תרנגולת

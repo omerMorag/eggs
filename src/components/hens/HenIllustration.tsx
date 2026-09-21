@@ -120,6 +120,22 @@ const HENS: Record<HenName, HenConfig> = {
   },
 };
 
+/**
+ * מיפוי שלב (1–7 ב-journeySteps) -> איור תרנגולת מתאים לתוכן אותו שלב.
+ * מקור אמת יחיד: גם כרטיס השלב ב"מסלול שלי" (StepRow.tsx) וגם כרטיס
+ * "הדבר הבא שלך" (NextActionCard.tsx) משתמשים באותו מיפוי בדיוק, כדי
+ * שהתרנגולת שמלווה את הפעולה הבאה תמיד תתאים לשלב שהפעולה שייכת אליו.
+ */
+export const STEP_HEN: Partial<Record<number, HenName>> = {
+  1: "tests",
+  2: "choose-clinic",
+  3: "step-requirements",
+  4: "consultation",
+  5: "step-protocol",
+  6: "step-monitoring",
+  7: "step-retrieval",
+};
+
 interface HenIllustrationProps {
   name: HenName;
   /** גוון כתם הרקע העדין מאחורי האיור; "none" מדלג על הכתם */

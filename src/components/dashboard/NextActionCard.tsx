@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { journeySteps } from "@/data/steps";
 import type { JourneyProgress } from "@/lib/useJourneyProgress";
-import HenIllustration from "@/components/hens/HenIllustration";
+import HenIllustration, { STEP_HEN } from "@/components/hens/HenIllustration";
 
 /** אותם שני קבצים בדיוק כמו ב-CompletionCelebration.tsx (לא נוצר איור חדש):
  *  התרנגולת הקיצית (בגד ים, משקפי שמש, גביע) עם גיבוי לתרנגולת החורפית
@@ -43,6 +43,12 @@ export default function NextActionCard({ progress, onGoToAction }: NextActionCar
     ? journeySteps.find((step) => step.id === nextAction.stepId)?.icon
     : undefined;
   const StepIcon = stepIcon;
+  // אותה תרנגולת בדיוק שמופיעה בכרטיס השלב הזה ברשימת "המסלול שלי"
+  // (STEP_HEN, מיפוי מרכזי ב-HenIllustration.tsx) — כך התרנגולת כאן תמיד
+  // תואמת לשלב שה-Next Action שייך אליו בפועל, ולא קבועה לאייקון אחד גנרי.
+  // "roadmap" (התרנגולת המקורית שהייתה כאן) נשארת רק כגיבוי לשלב עתידי
+  // שעדיין לא קיבל תרנגולת ייעודית משלו.
+  const nextActionHen = (nextAction ? STEP_HEN[nextAction.stepId] : undefined) ?? "roadmap";
 
   return (
     <section className="relative animate-fadeUp overflow-hidden rounded-2xl border-2 border-warm-300/60 bg-warm-100/50 p-4 shadow-card sm:p-6">
@@ -119,7 +125,7 @@ export default function NextActionCard({ progress, onGoToAction }: NextActionCar
 
         {!allStepsCompleted && (
           <div className="hidden shrink-0 self-center sm:block">
-            <HenIllustration name="roadmap" sizeClassName="w-16 lg:w-20" />
+            <HenIllustration name={nextActionHen} sizeClassName="w-16 lg:w-20" />
           </div>
         )}
       </div>
