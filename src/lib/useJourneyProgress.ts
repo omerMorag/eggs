@@ -25,6 +25,56 @@ function emptyProgress(): StoredProgress {
   return { steps: [], stepTasks: [], tests: [], testSubItems: [], testDates: {} };
 }
 
+/** "הדבר הבא שלך" — נגזר תמיד מ-completedStepTasks, אין state ידני נפרד
+ *  של "השלב הנוכחי" (כדי שלא ייווצר מצב שבו משימות מסומנות אבל ה-Next
+ *  Action לא מתעדכן). null רק כששני התנאים מתקיימים: כל תתי-המשימות בכל
+ *  השלבים מסומנות — כלומר המסלול כולו הושלם. */
+export interface NextAction {
+  stepId: number;
+  stepTitle: string;
+  /** כינוי קצר לשלב, לשורת ההקשר הקומפקטית (step.shortLabel) */
+  shortLabel: string;
+  taskIndex: number;
+  /** ניסוח ממוקד-פעולה של המשימה הבאה (step.taskActions[taskIndex]) */
+  actionLabel: string;
+  doneInStep: number;
+  totalInStep: number;
+  readMoreHref?: string;
+  readMoreLabel?: string;
+}
+
+/** מוצאת את השלב הראשון שעדיין לא הושלם, ובתוכו את תת-המשימה הראשונה
+ *  שעדיין לא סומנה — בדיוק החוק שהתבקש: "מצאי את השלב הראשון שלא הושלם,
+ *  ובתוכו את תת-המשימה הראשונה שלא סומנה". */
+function computeNextAction(completedStepTasks: Set<string>): NextAction | null {
+  for (const step of journeySteps) {
+    const total = step.tasks.length;
+    let doneInStep = 0;
+    let firstUndoneIndex = -1;
+    for (let i = 0; i < total; i += 1) {
+      if (completedStepTasks.has(`${step.id}:${i}`)) {
+        doneInStep += 1;
+      } else if (firstUndoneIndex === -1) {
+        firstUndoneIndex = i;
+      }
+    }
+    if (firstUndoneIndex !== -1) {
+      return {
+        stepId: step.id,
+        stepTitle: step.title,
+        shortLabel: step.shortLabel,
+        taskIndex: firstUndoneIndex,
+        actionLabel: step.taskActions[firstUndoneIndex] ?? step.tasks[firstUndoneIndex],
+        doneInStep,
+        totalInStep: total,
+        readMoreHref: step.readMoreHref,
+        readMoreLabel: step.readMoreLabel,
+      };
+    }
+  }
+  return null;
+}
+
 function readStorage(): StoredProgress {
   if (typeof window === "undefined") {
     return emptyProgress();
@@ -367,6 +417,11 @@ export function useJourneyProgress() {
     [completedSteps]
   );
 
+  // "הדבר הבא שלך" (NextActionCard) — נגזר ישירות מ-completedStepTasks,
+  // באותו האופן בדיוק כמו completedSteps/completedTests למעלה. null =
+  // המסלול כולו הושלם (כל תתי-המשימות בכל השלבים מסומנות).
+  const nextAction = useMemo(() => computeNextAction(completedStepTasks), [completedStepTasks]);
+
   const progressPercent = useMemo(() => {
     const total = totalSteps + totalTests;
     if (total === 0) return 0;
@@ -395,6 +450,7 @@ export function useJourneyProgress() {
     totalStepTasksCount,
     doneStepTasksCount,
     nextStep,
+    nextAction,
     progressPercent,
     allStepsCompleted,
     hasAnyProgress,

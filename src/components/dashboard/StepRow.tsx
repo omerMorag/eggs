@@ -33,6 +33,9 @@ interface StepRowProps {
   onToggleExpand: (id: number) => void;
   setRowRef: (id: number, el: HTMLLIElement | null) => void;
   hideParallelBadge?: boolean;
+  /** מפתח "stepId:taskIndex" של המשימה שיש להדגיש רגעית (הגעה מ-NextActionCard
+   *  דרך CTA "להמשך") — null כשאין הדגשה פעילה. ראו RoadmapSection.tsx. */
+  highlightedTaskKey?: string | null;
 }
 
 /**
@@ -55,6 +58,7 @@ export default function StepRow({
   onToggleExpand,
   setRowRef,
   hideParallelBadge = false,
+  highlightedTaskKey = null,
 }: StepRowProps) {
   const panelId = `step-tasks-${step.id}`;
   const henName = STEP_HEN[step.id];
@@ -165,11 +169,14 @@ export default function StepRow({
                   const taskKey = `${step.id}:${index}`;
                   const isTaskDone = completedStepTasks.has(taskKey);
                   const taskCheckboxId = `step-task-${step.id}-${index}`;
+                  const isHighlighted = highlightedTaskKey === taskKey;
                   return (
-                    <li key={taskKey}>
+                    <li key={taskKey} id={`step-task-row-${step.id}-${index}`}>
                       <label
                         htmlFor={taskCheckboxId}
-                        className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-white sm:py-2.5"
+                        className={`flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-2 transition-colors duration-700 motion-reduce:transition-none sm:py-2.5 ${
+                          isHighlighted ? "bg-warm-100 ring-2 ring-warm-300" : "hover:bg-white"
+                        }`}
                       >
                         <input
                           id={taskCheckboxId}

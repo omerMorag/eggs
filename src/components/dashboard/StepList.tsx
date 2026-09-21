@@ -11,6 +11,8 @@ interface StepListProps {
   onToggleTask: (stepId: number, taskIndex: number) => void;
   onToggleExpand: (id: number) => void;
   setRowRef: (id: number, el: HTMLLIElement | null) => void;
+  /** מפתח "stepId:taskIndex" של המשימה שיש להדגיש רגעית, או null — ראו StepRow.tsx */
+  highlightedTaskKey?: string | null;
 }
 
 export default function StepList({
@@ -19,6 +21,7 @@ export default function StepList({
   onToggleTask,
   onToggleExpand,
   setRowRef,
+  highlightedTaskKey = null,
 }: StepListProps) {
   // הצעד הראשון שאינו "אפשר במקביל" קובע היכן מסתיימת קבוצת השלבים
   // שאפשר להתקדם בהם זו לצד זו (כרגע שלבים 1–3).
@@ -37,6 +40,7 @@ export default function StepList({
       onToggleExpand={onToggleExpand}
       setRowRef={setRowRef}
       hideParallelBadge={hideParallelBadge}
+      highlightedTaskKey={highlightedTaskKey}
     />
   );
 
