@@ -9,7 +9,7 @@ const VISIBILITY_THRESHOLD = 0.35;
  * הגורם המפעיל את רצף האנימציה של מסך הסיום (CompletionCelebration) —
  * לא state חדש של התקדמות, רק state מקומי-חזותי לרכיב עצמו:
  *
- * - `reducedMotion`: אותו דפוס זיהוי בדיוק כמו ב-useIntroJourneyTransition.ts
+ * - `reducedMotion`: אותו דפוס זיהוי בדיוק כמו ב-useHeroScrollTransition.ts
  *   הקיים (matchMedia + מאזין לשינוי), כדי לשמור על עקביות בפרויקט.
  * - `started`: כש-reducedMotion פעיל, מוצג מיד מצב הסיום הסופי בלי אנימציה —
  *   אין טעם/צורך ב-IntersectionObserver במקרה הזה (אין מה "להתחיל").

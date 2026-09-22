@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "@fontsource/assistant/300.css";
 import "@fontsource/assistant/400.css";
 import "@fontsource/assistant/500.css";
 import "@fontsource/assistant/600.css";
