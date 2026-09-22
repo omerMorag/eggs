@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { useSession } from "next-auth/react";
 import { useJourneyProgress } from "@/lib/useJourneyProgress";
 import { useHashSection } from "@/lib/useHashSection";
 import { useHeroScrollTransition } from "@/lib/useHeroScrollTransition";
@@ -49,6 +50,18 @@ export default function AppShell() {
   const [openStepId, setOpenStepId] = useState<number | null>(null);
   const { showHero, chromeVisible, reducedMotion, onHeroComplete, resetHero } =
     useHeroScrollTransition();
+  const { status: authStatus } = useSession();
+  // "מי שכבר הייתה באתר" — יש לה **כל** סימון שמור (מקומי/מסונכרן), ולו
+  // תת-משימה אחת, או שהיא מחוברת לגוגל. בכוונה **לא** progress.hasAnyProgress
+  // הקיים (שם ההגדרה "שלב/בדיקה שלמה הושלמה" — מתאימה לכפתור האיפוס
+  // ב-RoadmapSection, אבל תחסיר כאן מי שסימנה כמה משימות בלי לסיים שלב
+  // שלם). לפני הידרציה (טעינת ה-localStorage) הכול 0 — ברירת המחדל נשארת
+  // "חדשה", כמו ההתנהגות הקיימת היום, ומתעדכנת תוך כדי טעינת הדף.
+  const isReturningVisitor =
+    progress.doneStepTasksCount > 0 ||
+    progress.completedTestSubItems.size > 0 ||
+    progress.selectedCareUnit !== null ||
+    authStatus === "authenticated";
 
   // בכל מעבר בין אזורים, גוללים לראש התוכן — כמו מעבר בין "עמודים" אמיתי
   useEffect(() => {
@@ -96,13 +109,21 @@ export default function AppShell() {
           לעמודת התוכן בדיוק כמו RoadmapSection שמתחתיו — לכן הוא מרונדר
           בתוך ה-main, לא כאלמנט full-bleed נפרד. */}
       {section === "roadmap" && showHero && !reducedMotion && (
-        <HeroIntro reducedMotion={false} onComplete={onHeroComplete} />
+        <HeroIntro
+          reducedMotion={false}
+          onComplete={onHeroComplete}
+          isReturningVisitor={isReturningVisitor}
+        />
       )}
 
       <div className="lg:mr-0 lg:ml-[252px]">
         <main className="mx-auto max-w-4xl px-3.5 py-6 sm:px-6 sm:py-9 lg:py-12">
           {section === "roadmap" && showHero && reducedMotion && (
-            <HeroIntro reducedMotion onComplete={onHeroComplete} />
+            <HeroIntro
+              reducedMotion
+              onComplete={onHeroComplete}
+              isReturningVisitor={isReturningVisitor}
+            />
           )}
           {section === "roadmap" && (
             <RoadmapSection progress={progress} openStepId={openStepId} onOpenStep={openStep} />

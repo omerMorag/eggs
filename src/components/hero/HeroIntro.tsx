@@ -10,6 +10,11 @@ interface HeroIntroProps {
   reducedMotion: boolean;
   /** נקרא פעם אחת כשהמעבר הסתיים (שחרור ה-pin), או מיד ב-mount כש-reducedMotion */
   onComplete: () => void;
+  /** true כשיש למשתמשת התקדמות שמורה (מקומית/מסונכרנת) או שהיא מחוברת
+   *  לגוגל — קובע רק את ניסוח כפתור ה-CTA ("המשיכי במסלול" לעומת "התחילי
+   *  במסלול"), כדי שיהיה ברור-מיד שהכפתור קופץ ישר למסלול בלי לגלול
+   *  בפועל. שום שינוי אחר בעיצוב/במנגנון עצמו. */
+  isReturningVisitor: boolean;
 }
 
 /**
@@ -28,7 +33,7 @@ interface HeroIntroProps {
  * ה-Roadmap, ו-onComplete נקרא מיד ב-mount (Sidebar/Header גלויים
  * מההתחלה, בדיוק "Hero רגיל ↓ Roadmap רגיל" שהתבקש).
  */
-export default function HeroIntro({ reducedMotion, onComplete }: HeroIntroProps) {
+export default function HeroIntro({ reducedMotion, onComplete, isReturningVisitor }: HeroIntroProps) {
   const pinRef = useRef<HTMLDivElement | null>(null);
   const henRef = useRef<HTMLImageElement | null>(null);
   const wordmarkRef = useRef<HTMLHeadingElement | null>(null);
@@ -148,7 +153,7 @@ export default function HeroIntro({ reducedMotion, onComplete }: HeroIntroProps)
             onClick={handleCtaClick}
             className="group mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-ink/60 transition-colors hover:text-teal-600"
           >
-            מתחילה
+            {isReturningVisitor ? "המשיכי במסלול" : "התחילי במסלול"}
             <ChevronDown
               className="h-4 w-4 transition-transform group-hover:translate-y-0.5"
               strokeWidth={2.25}
