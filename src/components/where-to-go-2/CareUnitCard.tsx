@@ -1,11 +1,13 @@
 "use client";
 
 import { BadgeCheck, CircleAlert, Heart, MapPin } from "lucide-react";
-import type { CareUnit } from "@/data/careUnits";
-import { findPriceRow } from "@/data/careUnits";
+import type { CareUnit, HealthFund } from "@/data/careUnits";
+import { fundsWithArrangement, routesForFund, selfPayRoute } from "@/data/careUnits";
 
 interface CareUnitCardProps {
   unit: CareUnit;
+  /** הקופה הנבחרת באשף (שלב 1), null/undefined = לא נבחרה קופה */
+  selectedFund: HealthFund | null;
   isSelected: boolean;
   isCompared: boolean;
   canAddToComparison: boolean;
@@ -13,21 +15,39 @@ interface CareUnitCardProps {
   onToggleCompare: () => void;
 }
 
+function VerificationChip({ verified }: { verified: boolean }) {
+  return verified ? (
+    <span className="inline-flex items-center gap-0.5 rounded-full bg-warm-100 px-1.5 py-0.5 text-[10px] font-semibold text-warm-500 ring-1 ring-inset ring-warm-300/60">
+      <BadgeCheck className="h-2.5 w-2.5" strokeWidth={2.5} />
+      מאומת
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-0.5 rounded-full bg-mist-100 px-1.5 py-0.5 text-[10px] font-semibold text-ink/50 ring-1 ring-inset ring-mist-200">
+      <CircleAlert className="h-2.5 w-2.5" strokeWidth={2.5} />
+      דורש אימות
+    </span>
+  );
+}
+
 /**
- * כרטיס מכווץ ליחידה (§6 בבקשת WHERE TO DO 2.0) — לא מציג הכול, רק את מה
- * שנדרש לסריקה מהירה: שם/אזור/תגיות, עלות משוערת (תמיד משוכפלת מתוך
- * hospitalPrices.ts דרך findPriceRow, לעולם לא ממציאה), מעקבים, בחירת רופא,
- * קופות/הסדרים, ושני CTA-ים. שום דירוג/"הכי מתאים" — ר' §5.
+ * כרטיס מכווץ ליחידה — עכשיו מודע ל-routes: כשנבחרה קופה שיש לה route
+ * תואם ביחידה, הוא מוצג בראש (מחיר ההסדר + שורת זכאות "בכפוף ל..." כנה —
+ * לעולם לא "מגיע לך X ₪"), עם מחיר תשלום-עצמי כשורה משנית עדינה מתחתיו.
+ * אם אין route תואם, מוצג תשלום עצמי כברירת מחדל + באדג'ים לכל קופה שיש
+ * לה הסדר כלשהו ביחידה — היחידה לעולם לא מוסתרת (§4).
  */
 export default function CareUnitCard({
   unit,
+  selectedFund,
   isSelected,
   isCompared,
   canAddToComparison,
   onOpenDetail,
   onToggleCompare,
 }: CareUnitCardProps) {
-  const priceRow = unit.hasPriceRef ? findPriceRow(unit.name) : undefined;
+  const matchedRoute = selectedFund ? routesForFund(unit, selectedFund)[0] : undefined;
+  const selfPay = selfPayRoute(unit);
+  const otherFunds = fundsWithArrangement(unit).filter((f) => f !== selectedFund);
 
   return (
     <div className="rounded-2xl border-2 border-mist-200 bg-white p-4 shadow-card sm:p-5">
@@ -41,67 +61,65 @@ export default function CareUnitCard({
       </div>
 
       <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink/50">
-        {unit.region && (
+        {(unit.city || unit.region) && (
           <span className="inline-flex items-center gap-1">
             <MapPin className="h-3.5 w-3.5" strokeWidth={2} />
-            {unit.region}
+            {[unit.city, unit.region].filter(Boolean).join(" · ")}
           </span>
         )}
         <span className="inline-flex items-center rounded-full bg-mist-100 px-2 py-0.5 font-semibold text-ink/60">
-          {unit.type === "public" ? "ציבורי" : "פרטי"}
+          {unit.setting === "public" ? "בית חולים ציבורי" : "מרכז פרטי"}
         </span>
-        {unit.fundingOptions.includes("hmoArrangement") && (
-          <span className="inline-flex items-center rounded-full bg-teal-50 px-2 py-0.5 font-semibold text-teal-700 ring-1 ring-inset ring-teal-100">
-            הסדר קופה רלוונטי
-          </span>
-        )}
       </div>
 
-      <dl className="mt-3 grid gap-2 text-sm leading-relaxed text-ink/70 sm:grid-cols-2">
-        <div>
-          <dt className="text-xs font-semibold text-ink/45">עלות משוערת</dt>
-          <dd className="mt-0.5 flex flex-wrap items-center gap-1.5">
-            {priceRow ? (
+      {matchedRoute ? (
+        <div className="mt-3 rounded-xl border-2 border-teal-200 bg-teal-50/60 p-3">
+          <span className="inline-flex items-center rounded-full bg-teal-600 px-2 py-0.5 text-[11px] font-semibold text-white">
+            דרך {matchedRoute.requiredPlan ?? matchedRoute.healthFund}
+          </span>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <span className="text-base font-bold text-ink">
+              {matchedRoute.pricePerCycle ?? "מחיר לא פורסם"}
+            </span>
+            <VerificationChip verified={matchedRoute.verificationStatus === "verified"} />
+          </div>
+          {matchedRoute.eligibilityNote && (
+            <p className="mt-1 text-xs leading-relaxed text-ink/60">{matchedRoute.eligibilityNote}</p>
+          )}
+          <p className="mt-1 text-xs leading-relaxed text-ink/60">
+            תרופות: {matchedRoute.medicationsIncluded ? "כלולות" : matchedRoute.medicationNotes ?? "בנפרד"}
+          </p>
+          {selfPay?.pricePerCycle && (
+            <p className="mt-1.5 text-xs text-ink/45">ללא הסדר: {selfPay.pricePerCycle} לסבב</p>
+          )}
+        </div>
+      ) : (
+        <div className="mt-3">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs font-semibold text-ink/45">עלות בתשלום עצמי:</span>
+            {selfPay?.pricePerCycle ? (
               <>
-                <span>{priceRow.cycle1Price}</span>
-                {priceRow.verification === "verified" ? (
-                  <span className="inline-flex items-center gap-0.5 rounded-full bg-warm-100 px-1.5 py-0.5 text-[10px] font-semibold text-warm-500 ring-1 ring-inset ring-warm-300/60">
-                    <BadgeCheck className="h-2.5 w-2.5" strokeWidth={2.5} />
-                    מאומת
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-0.5 rounded-full bg-mist-100 px-1.5 py-0.5 text-[10px] font-semibold text-ink/50 ring-1 ring-inset ring-mist-200">
-                    <CircleAlert className="h-2.5 w-2.5" strokeWidth={2.5} />
-                    דורש אימות
-                  </span>
-                )}
+                <span className="text-sm text-ink/80">{selfPay.pricePerCycle}</span>
+                <VerificationChip verified={selfPay.verificationStatus === "verified"} />
               </>
             ) : (
-              <span className="text-ink/45">יש לברר מול היחידה</span>
+              <span className="text-sm text-ink/45">יש לברר מול היחידה</span>
             )}
-          </dd>
+          </div>
+          {otherFunds.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {otherFunds.map((f) => (
+                <span
+                  key={f}
+                  className="inline-flex items-center rounded-full bg-teal-50 px-2 py-0.5 text-[11px] font-semibold text-teal-700 ring-1 ring-inset ring-teal-100"
+                >
+                  הסדר {f}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
-        <div>
-          <dt className="text-xs font-semibold text-ink/45">מעקבים</dt>
-          <dd className="mt-0.5">{unit.monitoringLocation ?? "יש לברר מול היחידה"}</dd>
-        </div>
-        <div>
-          <dt className="text-xs font-semibold text-ink/45">בחירת רופא/ה</dt>
-          <dd className="mt-0.5">
-            {unit.doctorChoice === "yes"
-              ? "כן"
-              : unit.doctorChoice === "no"
-                ? "לא"
-                : unit.doctorChoice === "depends"
-                  ? "תלוי במסלול"
-                  : "יש לברר מול היחידה"}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-xs font-semibold text-ink/45">קופות/הסדרים</dt>
-          <dd className="mt-0.5">{unit.healthFunds?.join(", ") ?? "יש לברר מול היחידה"}</dd>
-        </div>
-      </dl>
+      )}
 
       <div className="mt-4 flex flex-wrap items-center gap-2.5">
         <button

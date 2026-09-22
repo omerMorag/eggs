@@ -43,8 +43,8 @@ export default function WhereToGoSection({ progress }: WhereToGoSectionProps) {
             איפה כדאי לי לעשות?
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink/70 sm:text-base">
-            יש כמה דרכים לעבור את התהליך — ציבורי, פרטי ומסלולים עם סבסוד או הסדרים. כאן אפשר לעשות
-            סדר ולהשוות בין האפשרויות.
+            למקום שבו עושים את התהליך וגם לדרך שבה משלמים עליו יש כמה אפשרויות — ולפעמים אותו מקום
+            מציע כמה דרכי מימון בו-זמנית. כאן אפשר לעשות סדר ולהשוות לפי הקופה והאזור שלך.
           </p>
         </div>
         <div className="mt-4 flex justify-center lg:mt-0 lg:shrink-0 lg:justify-end">

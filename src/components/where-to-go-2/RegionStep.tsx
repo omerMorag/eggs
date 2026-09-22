@@ -25,7 +25,7 @@ interface RegionStepProps {
   onChange: (value: RegionFilter) => void;
 }
 
-/** §2: "איפה נוח לך לעבור את התהליך?" — צ'יפים, לא מסך נפרד */
+/** שלב 2 באשף (אחרי בחירת קופה): "איפה נוח לך לעבור את התהליך?" — צ'יפים, לא מסך נפרד */
 export default function RegionStep({ value, onChange }: RegionStepProps) {
   return (
     <div>
