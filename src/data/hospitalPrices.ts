@@ -6,6 +6,13 @@ import type { HospitalPriceRow, SourceLink } from "./types";
  *
  * verification: "verified" = אומת בפרסום הרשמי של בית החולים עצמו.
  *               "needs-verification" = מבוסס על מדריכי השוואה ברשת, לא על מחירון רשמי עדכני.
+ *
+ * fundArrangements: "כללית" מסומן על 6 בתי החולים שמופעלים ישירות ע"י כללית
+ * (סורוקה, בילינסון, מאיר, כרמל, קפלן, העמק) — לפי דיווחי תקשורת עצמאיים
+ * ומתואמים (ישראל היום, 30.6.2025; Mynet-עמק, 8.7.2025; חי-פה) על השקת שירות
+ * שימור הפוריות בכללית מושלם פלטינום, ולא לפי רשימה רשמית שאותרה ישירות
+ * באתר כללית מושלם (ר' הערת המקור/הניסוח המלא ב-healthFunds.ts). "מכבי"
+ * מסומן לפי אתר מכבי שלי הרשמי (healthFunds.ts).
  */
 
 export const comparisonGuideSource: SourceLink = {
@@ -32,7 +39,7 @@ export const hospitalPrices: HospitalPriceRow[] = [
     cycle2Price: "14,000 ₪",
     whatsIncluded: "טיפול ומעקב, שאיבה, הקפאה ואחסון לחמש שנים",
     verification: "verified",
-    fundArrangements: ["מכבי שלי"],
+    fundArrangements: ["מכבי"],
     source: { label: "שיבא — הקפאת ביציות מבחירה", url: "https://maternity.sheba.co.il/הקפאת-ביציות" },
   },
   {
@@ -96,6 +103,7 @@ export const hospitalPrices: HospitalPriceRow[] = [
     cycle1Price: "כ־8,500 ₪",
     needsVerify: "מחיר עדכני והסדרי קופה",
     verification: "needs-verification",
+    fundArrangements: ["כללית"],
   },
   {
     name: "מאיר",
@@ -103,6 +111,7 @@ export const hospitalPrices: HospitalPriceRow[] = [
     cycle1Price: "כ־7,000 ₪",
     needsVerify: "זמינות, אחסון ותרופות",
     verification: "needs-verification",
+    fundArrangements: ["כללית"],
   },
   {
     name: "בילינסון",
@@ -110,6 +119,7 @@ export const hospitalPrices: HospitalPriceRow[] = [
     cycle1Price: "כ־7,000 ₪",
     needsVerify: "מחיר וזמן המתנה",
     verification: "needs-verification",
+    fundArrangements: ["כללית"],
   },
   {
     name: "קפלן",
@@ -117,6 +127,7 @@ export const hospitalPrices: HospitalPriceRow[] = [
     cycle1Price: "כ־6,200 ₪",
     needsVerify: "מחיר עדכני ומה כלול",
     verification: "needs-verification",
+    fundArrangements: ["כללית"],
   },
   {
     name: "איכילוב",
@@ -140,6 +151,7 @@ export const hospitalPrices: HospitalPriceRow[] = [
     cycle2Price: "14,000 ₪",
     needsVerify: "מחיר לסבב יחיד ומה כלול",
     verification: "needs-verification",
+    fundArrangements: ["כללית"],
   },
   // 5 השורות הבאות נוספו לפי רשימת היחידות המוסמכות הרשמית של משרד הבריאות
   // (gov.il — ivf-inst-cryopreservation) שהמשתמשת סיפקה, ולא היו בטבלה קודם.
@@ -177,6 +189,7 @@ export const hospitalPrices: HospitalPriceRow[] = [
     cycle1Price: "לא פורסם מחיר תשלום עצמי באתר היחידה",
     needsVerify: "מחיר, מה כלול ואחסון",
     verification: "needs-verification",
+    fundArrangements: ["כללית"],
     source: {
       label: "מרכז רפואי העמק — מעבדת IVF",
       url: "https://hospitals.clalit.co.il/emek/he/departmentsandclinics/women_birth_department/moadon_yoldot_hila/Pages/ivf_laborotory.aspx",

@@ -76,22 +76,24 @@ const PRIVATE_UNIT_REGION: Partial<Record<string, Region>> = {
 };
 
 /**
- * 4 המרכזים הפרטיים ללא מחיר קבוע (privateCost.ts). "מדיקה אלישע" מסומנת
- * גם hmoArrangement/מכבי — לפי ההערה הקיימת ב-healthFunds.ts (״נכון לעדכון
- * מרץ 2026, בתי החולים שבהסכם [מכבי שלי] הם שיבא תל השומר ומדיקה אלישע״),
- * לא ניחוש חדש.
+ * 4 המרכזים הפרטיים ללא מחיר קבוע (privateCost.ts). "מדיקה אלישע" ו"אסותא
+ * רמת החייל" מסומנות גם hmoArrangement/מכבי — לפי ההערה העדכנית ב-
+ * healthFunds.ts (״נכון לעדכון 16 בספטמבר 2026, בתי החולים שבהסכם [מכבי שלי]
+ * הם שיבא תל השומר, מדיקה אלישע ואסותא רמת החייל״), לא ניחוש חדש.
  */
+const MACCABI_PRIVATE_UNITS = ["מדיקה אלישע", "אסותא רמת החייל"];
+
 const privateUnits: CareUnit[] = privateFacilitiesNoFixedPrice.map((name) => {
-  const isElisha = name === "מדיקה אלישע";
+  const isMaccabiArrangement = MACCABI_PRIVATE_UNITS.includes(name);
   return {
     id: name.replace(/[^֐-׿\w]+/g, "-"),
     name,
     region: PRIVATE_UNIT_REGION[name],
     type: "private",
-    fundingOptions: isElisha ? ["private", "hmoArrangement"] : ["private"],
-    healthFunds: isElisha ? ["מכבי"] : undefined,
+    fundingOptions: isMaccabiArrangement ? ["private", "hmoArrangement"] : ["private"],
+    healthFunds: isMaccabiArrangement ? ["מכבי"] : undefined,
     hasPriceRef: false,
-    source: isElisha ? maccabiSheliSource : undefined,
+    source: isMaccabiArrangement ? maccabiSheliSource : undefined,
     isActive: true,
   } satisfies CareUnit;
 });
