@@ -35,6 +35,9 @@ export interface ShareStoryFormValues {
   frozenCount: string;
 }
 
+const MIN_TITLE_LENGTH = 2;
+const MIN_STORY_LENGTH = 20;
+
 const EMPTY_VALUES: ShareStoryFormValues = {
   isAnonymous: false,
   displayName: "",
@@ -97,11 +100,27 @@ export default function ShareStoryForm({ mode, storyId, initialValues, onSuccess
     setValues((prev) => ({ ...prev, [key]: value }));
   };
 
-  const canSubmit = values.title.trim().length >= 2 && values.storyText.trim().length >= 20 && consent;
+  const titleLength = values.title.trim().length;
+  const storyLength = values.storyText.trim().length;
+  const titleTooShort = titleLength > 0 && titleLength < MIN_TITLE_LENGTH;
+  const storyTooShort = storyLength > 0 && storyLength < MIN_STORY_LENGTH;
+  const canSubmit = titleLength >= MIN_TITLE_LENGTH && storyLength >= MIN_STORY_LENGTH && consent;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canSubmit) return;
+    if (!canSubmit) {
+      // כפתור השליחה עלול להיות disabled גם כש-consent חסר — כאן מציגים סיבה
+      // ממוקדת כשהחסימה היא אורך הטקסט, כדי שלא יישאר בלי שום הסבר (§ באג
+      // שדווח: "לא נותן לפרסם" בלי שום אינדיקציה מדוע).
+      if (titleLength < MIN_TITLE_LENGTH) {
+        setErrorMessage(`הכותרת קצרה מדי — נדרשים לפחות ${MIN_TITLE_LENGTH} תווים.`);
+      } else if (storyLength < MIN_STORY_LENGTH) {
+        setErrorMessage(`הסיפור קצר מדי — נדרשים לפחות ${MIN_STORY_LENGTH} תווים (יש כרגע ${storyLength}).`);
+      } else if (!consent) {
+        setErrorMessage("יש לאשר את הסכמת הפרסום לפני השליחה.");
+      }
+      return;
+    }
     setSubmitState("submitting");
     setErrorMessage(null);
 
@@ -186,6 +205,11 @@ export default function ShareStoryForm({ mode, storyId, initialValues, onSuccess
           required
           className={inputClass()}
         />
+        {titleTooShort && (
+          <p className="mt-1 text-xs font-semibold text-deep">
+            נדרשים לפחות {MIN_TITLE_LENGTH} תווים (יש כרגע {titleLength}).
+          </p>
+        )}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -278,6 +302,15 @@ export default function ShareStoryForm({ mode, storyId, initialValues, onSuccess
           required
           className={inputClass()}
         />
+        {/* מונה תווים חי + סף מינימום — לפני התיקון הכפתור היה פשוט disabled
+            בלי שום הסבר כשהסיפור קצר מ-20 תווים (הבאג שדווח). מוצג תמיד
+            (לא רק כשקצר מדי) כדי שהדרישה תהיה גלויה מראש, לא רק אחרי כישלון. */}
+        <p className={`mt-1 text-xs ${storyTooShort ? "font-semibold text-deep" : "text-ink/40"}`}>
+          {storyLength} תווים
+          {storyTooShort
+            ? ` — נדרשים לפחות ${MIN_STORY_LENGTH} (עוד ${MIN_STORY_LENGTH - storyLength})`
+            : ` (מינימום ${MIN_STORY_LENGTH})`}
+        </p>
       </div>
 
       <div>
