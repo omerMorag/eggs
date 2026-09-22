@@ -141,4 +141,67 @@ export const hospitalPrices: HospitalPriceRow[] = [
     needsVerify: "מחיר לסבב יחיד ומה כלול",
     verification: "needs-verification",
   },
+  // 5 השורות הבאות נוספו לפי רשימת היחידות המוסמכות הרשמית של משרד הבריאות
+  // (gov.il — ivf-inst-cryopreservation) שהמשתמשת סיפקה, ולא היו בטבלה קודם.
+  // שיוך האזור לכל שורה חדשה (וגם לשורות הקיימות שנבדקו מחדש) נעשה לפי
+  // המחוז הרשמי של העיר: מחוז חיפה + מחוז הצפון -> "צפון", מחוז הדרום ->
+  // "דרום" (לכן חדרה, שבמחוז חיפה, מסווגת "צפון" בשונה מכפר סבא/"מאיר"
+  // שבמחוז המרכז; ואשדוד, שבמחוז הדרום הרשמי, מסווגת "דרום" ולא "מרכז").
+  {
+    name: "הלל יפה",
+    region: "צפון",
+    cycle1Price: "8,000 ₪",
+    whatsIncluded: "כל תהליך השימור (שאיבה והקפאה); לא כולל תרופות לגירוי שחלתי",
+    verification: "verified",
+    caveat:
+      "באתר היחידה מופיע גם הנתון 6,500 ₪ בתיאור מקוצר של העמוד, לצד 8,000 ₪ בפירוט המלא בהמשכו — מומלץ לאמת טלפונית (04-7744750) איזה מהם המחיר המעודכן.",
+    source: {
+      label: "הלל יפה — שימור הפוריות",
+      url: "https://hymc.org.il/?CategoryID=2253&ArticleID=8603",
+    },
+  },
+  {
+    name: "הדסה הר הצופים",
+    region: "ירושלים",
+    cycle1Price: "לא פורסם מחיר תשלום עצמי באתר היחידה",
+    needsVerify: "מחיר, מה כלול ואחסון",
+    verification: "needs-verification",
+    source: {
+      label: "הדסה הר הצופים — שימור פוריות",
+      url: "https://he.hadassah.org.il/women/fertility-conservation/",
+    },
+  },
+  {
+    name: "העמק",
+    region: "צפון",
+    cycle1Price: "לא פורסם מחיר תשלום עצמי באתר היחידה",
+    needsVerify: "מחיר, מה כלול ואחסון",
+    verification: "needs-verification",
+    source: {
+      label: "מרכז רפואי העמק — מעבדת IVF",
+      url: "https://hospitals.clalit.co.il/emek/he/departmentsandclinics/women_birth_department/moadon_yoldot_hila/Pages/ivf_laborotory.aspx",
+    },
+  },
+  {
+    name: "בית החולים האנגלי / הצרפתי / המשפחה הקדושה (נצרת)",
+    region: "צפון",
+    cycle1Price: "לא אותר מחיר תשלום עצמי מפורסם",
+    needsVerify: "מחיר, מה כלול ופרטי ההליך בפועל",
+    verification: "needs-verification",
+    source: {
+      label: "משרד הבריאות — רשימת יחידות IVF מוסמכות",
+      url: "https://www.gov.il/he/pages/ivf-inst-cryopreservation",
+    },
+  },
+  {
+    name: "אסותא אשדוד",
+    region: "דרום",
+    cycle1Price: "לא אותר מחיר תשלום עצמי מפורסם",
+    needsVerify: "מחיר ומה כלול",
+    verification: "needs-verification",
+    source: {
+      label: "אסותא אשדוד — היחידה לפריון ולהפריה חוץ גופית",
+      url: "https://www.assutaashdod.co.il/?catid=%7B6b314f6f-f644-4645-9172-848e7b5115dc%7D",
+    },
+  },
 ];
