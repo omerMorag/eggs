@@ -13,8 +13,9 @@ interface PersonalIntroSectionProps {
  * מקטע היכרות אישי וקצר, בין מסך הפתיחה (<HeroIntro/>) לתחילת המסלול —
  * חלק רגיל מזרימת העמוד (לא modal/פופ-אפ), בלי שאלון/בחירת מסלול/דרישת
  * התחברות. הפוגה קצרה ונעימה: טיפוגרפיה קריאה, הרבה אוויר, חתימה עדינה,
- * ותרנגולת המותג בגודל קטן. במובייל נשאר קצר בכוונה (padding מתון, לא
- * min-h-screen-safe) — לא עוד עמוד ארוך שצריך לעבור.
+ * ותרנגולת המותג בגודל קטן. המקטע תופס לפחות גובה מסך מלא (min-h-screen-safe)
+ * עם ריווח נדיב למעלה ולמטה והתוכן ממורכז אנכית — כך שהוא מרגיש כ"שקופית"
+ * עצמאית ולא חולף מהר מדי בגלילה.
  *
  * אנימציית הכניסה: fade+rise עדין וקצר מאוד (~150ms, הזזה זעירה) שמופעל כשהמקטע נכנס
  * בפועל לתצוגה (IntersectionObserver) — לא ב-mount כמו ב-Hero, כי המקטע
@@ -49,7 +50,7 @@ export default function PersonalIntroSection({ reducedMotion, onCtaClick }: Pers
   }, [reducedMotion]);
 
   return (
-    <section ref={sectionRef} aria-label="היכרות קצרה עם מקפיאות" className="px-4 py-14 sm:py-16 lg:py-20">
+    <section ref={sectionRef} aria-label="היכרות קצרה עם מקפיאות" className="min-h-screen-safe flex items-center justify-center px-4 py-24 sm:py-32 lg:py-40">
       <div
         className="mx-auto flex max-w-2xl flex-col items-center gap-5 text-center transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none sm:gap-6"
         style={{
