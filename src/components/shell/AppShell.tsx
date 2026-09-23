@@ -41,7 +41,9 @@ const AdminStoriesSection = dynamic(() => import("@/components/sections/AdminSto
  * עצמו נשאר תמיד mounted באותו מקום כמו היום (בתוך main, בתוך העטיפה
  * הממורווחת). Sidebar/MobileHeader מוסתרים בעזרת visibility (לא
  * display:none) + pointer-events כל עוד ה-Chrome עדיין לא נחשף, כדי שלא
- * יהיו נגישים/לחיצים "מבעד" למסך הפתיחה.
+ * יהיו נגישים/לחיצים "מבעד" למסך הפתיחה. החשיפה עצמה מונפשת (fade קצר,
+ * ~200ms) במקום להופיע בבת אחת — כדי שהמעבר ממקטע ההיכרות האישי לתחילת
+ * המסלול (שבו ה-Chrome נחשף) ירגיש ברור ורציף, לא כ"קפיצה" פתאומית.
  *
  * roadmapTopRef משמש שני תפקידים: (1) יעד גלילה מדויק לשני כפתורי ה-CTA
  * ("התחילי/המשיכי במסלול" ב-Hero, "מתחילה את המסלול" במקטע ההיכרות) —
@@ -134,7 +136,9 @@ export default function AppShell() {
   return (
     <div className="min-h-screen bg-mist-50/40">
       <div
-        className={chromeVisible ? "opacity-100" : "invisible pointer-events-none opacity-0"}
+        className={`transition-opacity duration-200 ease-out motion-reduce:transition-none ${
+          chromeVisible ? "opacity-100" : "invisible pointer-events-none opacity-0"
+        }`}
         aria-hidden={!chromeVisible}
       >
         <Sidebar
@@ -166,7 +170,12 @@ export default function AppShell() {
       )}
 
       <div className="lg:mr-0 lg:ml-[252px]">
-        <main className="mx-auto max-w-4xl px-3.5 py-6 sm:px-6 sm:py-9 lg:py-12">
+        {/* pt-[4.75rem]/sm:pt-[5.5rem] מפצים על ה-MobileHeader הקבוע (fixed,
+            h-14/sm:h-16 = 3.5rem/4rem) שאינו תורם גובה לזרימת המסמך —
+            בלעדיהם, תוכן שמתחיל ממש בראש main (למשל כותרת "הבדיקות שלי"
+            בקישור hash ישיר) היה נכנס מתחת ל-header. מ-lg ומעלה ה-header
+            מוסתר (lg:hidden) אז lg:py-12 חוזר לריפוד סימטרי רגיל. */}
+        <main className="mx-auto max-w-4xl px-3.5 pb-6 pt-[4.75rem] sm:px-6 sm:pb-9 sm:pt-[5.5rem] lg:py-12">
           {section === "roadmap" && (
             <div ref={roadmapTopRef}>
               <RoadmapSection progress={progress} openStepId={openStepId} onOpenStep={openStep} />

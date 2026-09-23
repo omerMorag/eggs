@@ -16,7 +16,7 @@ interface PersonalIntroSectionProps {
  * ותרנגולת המותג בגודל קטן. במובייל נשאר קצר בכוונה (padding מתון, לא
  * min-h-screen-safe) — לא עוד עמוד ארוך שצריך לעבור.
  *
- * אנימציית הכניסה: fade+rise עדין וקצר (~200ms) שמופעל כשהמקטע נכנס
+ * אנימציית הכניסה: fade+rise עדין וקצר מאוד (~150ms, הזזה זעירה) שמופעל כשהמקטע נכנס
  * בפועל לתצוגה (IntersectionObserver) — לא ב-mount כמו ב-Hero, כי המקטע
  * הזה מתחיל מתחת לקפל. חד-פעמי (לא נטען מחדש בגלילה הפוכה) ולא חוסם/מעכב
  * את הגלילה הטבעית בשום צורה — היא ממשיכה להגיב מיד לגלגלת/מגע.
@@ -51,10 +51,10 @@ export default function PersonalIntroSection({ reducedMotion, onCtaClick }: Pers
   return (
     <section ref={sectionRef} aria-label="היכרות קצרה עם מקפיאות" className="px-4 py-14 sm:py-16 lg:py-20">
       <div
-        className="mx-auto flex max-w-2xl flex-col items-center gap-5 text-center transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none sm:gap-6"
+        className="mx-auto flex max-w-2xl flex-col items-center gap-5 text-center transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none sm:gap-6"
         style={{
           opacity: visible ? 1 : 0,
-          transform: visible ? "translateY(0)" : "translateY(10px)",
+          transform: visible ? "translateY(0)" : "translateY(8px)",
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -80,7 +80,7 @@ export default function PersonalIntroSection({ reducedMotion, onCtaClick }: Pers
         </div>
 
         <p className="text-sm font-medium text-ink/50" style={{ fontStyle: "italic" }}>
-          עומר
+          מייסדת מקפיאות 💛
         </p>
 
         <button
