@@ -1,32 +1,35 @@
 import type { SourceLink } from "./types";
 
 /**
- * מודל הנתונים של "איפה כדאי לעשות?" (WHERE TO DO — תיקון שורש, 22.9.2026).
+ * מודל הנתונים של "איפה כדאי לעשות?" — מקור האמת היחיד למקומות, מסלולי
+ * התשלום והמחירים באזור הזה (וגם לרשימת המקומות במחשבון "כמה יעלה לי?").
  *
- * העיקרון: בית חולים/מרכז הוא ישות אחת (CareUnit) עם תכונה פיזית קבועה
- * (setting: ציבורי/פרטי), ובתוכו אפשר לעבור את התהליך בכמה "מסלולים"
- * (routes) — תשלום עצמי, ו/או הסדר עם קופה זו או אחרת — בו-זמנית.
- * "ציבורי/פרטי" ו"תשלום עצמי/הסדר קופה" הם שני ממדים נפרדים לגמרי: אסור
- * לטפל בהם כשלוש קטגוריות מקבילות ("ציבורי" / "פרטי" / "מסובסד"), וזו
- * בדיוק הטעות שתוקנה כאן — ראו CareUnitType/FundingOptionTag הישנים
- * שהוסרו. לדוגמה שיבא הוא בית חולים ציבורי, אבל יש בו גם תשלום עצמי וגם
- * שלושה הסדרי קופה נפרדים (מכבי/כללית/מאוחדת) — כל אלה routes נפרדים על
- * אותה ישות אחת, לא ישויות/קטגוריות שונות.
+ * העיקרון (תיקון-שורש 22.9.2026): יחידה (CareUnit) היא ישות אחת עם תכונה
+ * פיזית קבועה (setting: ציבורי/פרטי), ובתוכה כמה "מסלולי תשלום" (routes)
+ * בו-זמנית — תשלום עצמי ו/או הסדר ביטוח משלים של קופה. ציבורי/פרטי ו"דרך
+ * הקופה"/"תשלום עצמי" הם שני ממדים נפרדים: יחידה שבהסדר יכולה להיות ציבורית
+ * או פרטית, ו"ציבורי" אינו מילה נרדפת ל"מסובסד".
  *
- * מקור הנתונים: המפרט המלא שהמשתמשת סיפקה ב-22.9.2026 ("נכון ל-22.9.2026"),
- * שמחליף/מעדכן חלק מהנתונים הישנים. כללי המקור:
- *  1. חוזרי/כללי משרד הבריאות (eligibility.ts) — לא נגעו, כבר תואמים.
- *  2. תקנוני/עמודי הקופות הרשמיים העדכניים (healthFunds.ts) — לזכאות/מחיר ה-route.
- *  3. עמוד המחיר הרשמי של בית החולים עצמו — לתשלום עצמי.
- *  4. מקור משני עדכני (סיקור תקשורתי) — רק כשאין 1-3.
- *  5. מאמר ישן — לעולם לא דורס 1-4 (למשל: אין להשתמש בנתון הישן של 4,000 ₪
- *     עבור מאוחדת שמופיע עדיין בעמוד שמיר–אסף הרופא — תנאי מאוחדת שיא
- *     העדכניים הם 3,500 ₪, ולכן הנתון הישן פשוט לא נכלל כאן).
+ * עדכון 23.9.2026 — לפי קובץ המיפוי של המשתמשת ("מיפוי מקומות ומסלולים
+ * להקפאת ביציות", 23.9.2026) ובדיקה חוזרת של מקורות רשמיים:
+ *  - לאומית זהב: נוספו 4 מסלולים (שיבא, מדיקה אלישע, ברזילי, הדסה עין כרם)
+ *    לפי רשימת הספקים הרשמית של לאומית.
+ *  - שערי צדק: 8,000 ₪ למחזור + 345 ₪ פתיחת תיק (היה 6,500 ₪).
+ *  - קפלן: המחיר היחיד שאותר הוא מ-2022 — מוצג כמידע היסטורי, "מחיר בבירור".
+ *  - שמיר: הוסרו "12,000 ₪ לשניים" ו"300 ₪ פתיחת תיק" שלא אותרו במקור.
+ *  - מאוחדת שיא על שיבא: המחיר (3,500 ₪) לפי תקנון ספטמבר 2026, אבל ההסדר
+ *    עם שיבא עצמו לא אומת — סומן "דורש בירור".
+ *  - נצרת: הרשומה המאוחדת לשלושה בתי חולים צומצמה לבית החולים האנגלי בלבד —
+ *    זה המוסד היחיד שאותר לו פירוט IVF במקור שנבדק.
  *
- * שדה שאין לו מקור אמין — undefined, וה-UI מציג "יש לברר מול היחידה"/"מחיר
- * לא אומת" במקומו. אף מספר/זכאות לא מומצא. eligibilityNote תמיד מנוסח
- * "בכפוף ל..." — האתר לעולם לא קובע שהמשתמשת בהכרח זכאית (תלוי בגיל, ותק
- * וסטטוס ביטוח בפועל שהאתר לא יכול לדעת).
+ * כללים:
+ *  - `priceAmount` (מספר) מוזן רק כשיש מחיר שפורסם במקור רשמי. המחשבון מחבר
+ *    רק מחירים כאלה; כל השאר מוצג כ"מחיר בבירור" ולעולם לא נכנס לסכום.
+ *  - `pricePerCycle` (טקסט) יכול להכיל מחיר שפורסם בעבר / ממקור לא רשמי —
+ *    ה-UI מציג אותו רק כרמז מסומן "לא אומת", לא כמחיר.
+ *  - `verifiedAt` — רק תאריך בדיקה אמיתי.
+ *  - הסדר קופה ≠ "היחידה מבצעת הקפאת ביציות". route של קופה נוסף רק כשיש
+ *    מקור שמקשר בין הקופה ליחידה, ומסומן verified רק כשהקישור הזה אומת.
  */
 
 export type Region = "מרכז" | "ירושלים" | "צפון" | "דרום";
@@ -41,15 +44,23 @@ export interface CareRoute {
   fundingType: FundingType;
   /** רק כש-fundingType === "healthFundArrangement" */
   healthFund?: HealthFund;
-  /** שם התוכנית הספציפית הנדרשת, למשל "מכבי שלי" */
+  /** שם הרובד/התוכנית הנדרשים, למשל "מכבי שלי" */
   requiredPlan?: string;
   ageMin?: number;
   ageMax?: number;
   /** true כש"עד לפני גיל X" (לא כולל את הגיל עצמו) */
   ageMaxExclusive?: boolean;
   waitingPeriodMonths?: number;
-  /** מחרוזת מוצגת, למשל "3,500 ₪" — undefined = לא פורסם מחיר */
+  /** מחיר מספרי לסבב אחד — רק כשפורסם במקור רשמי (ר' כללים למעלה) */
+  priceAmount?: number;
+  /** true כשהמקור עצמו מציין "כ-" */
+  priceApprox?: boolean;
+  /** על מה המחיר: "למחזור טיפול", "לשאיבה" וכו' */
+  priceBasis?: string;
+  /** טקסט מחיר חופשי. כש-priceAmount חסר — רמז לא-מאומת בלבד */
   pricePerCycle?: string;
+  /** מידע נוסף על המחיר (חבילות, דמי פתיחת תיק) — רק מה שאותר במקור */
+  priceExtra?: string;
   numberOfCycles?: string;
   eggLimit?: string;
   storageYears?: number;
@@ -60,8 +71,10 @@ export interface CareRoute {
   notIncluded?: string;
   /** תמיד ניסוח "בכפוף ל..." — לעולם לא טענת זכאות ודאית */
   eligibilityNote?: string;
+  /** מה נדרש כדי לקבל אישור (הפניה, אישור מראש וכו') */
+  approvalNote?: string;
   source?: SourceLink;
-  /** רק תאריך מפורש שידוע בפועל — לא מומצא */
+  /** רק תאריך בדיקה אמיתי */
   verifiedAt?: string;
   verificationStatus: VerificationStatus;
   /** הערת אי-התאמה בין מקורות, או הבהרה חשובה למסלול הזה בלבד */
@@ -77,37 +90,73 @@ export interface CareUnit {
   setting: Setting;
   routes: CareRoute[];
   isActive: boolean;
+  /** אתר/עמוד היחידה */
+  website?: SourceLink;
+  /** טלפון שמופיע במקור רשמי בלבד, עם ציון המקור */
+  phone?: { number: string; sourceLabel: string };
 }
 
 function slug(name: string): string {
   return name.replace(/[^֐-׿\w]+/g, "-");
 }
 
+const CHECKED = "23.9.2026";
+
 /* ---------------------------------------------------------------------- */
 /* מקורות משותפים                                                          */
 /* ---------------------------------------------------------------------- */
 
 const MACCABI_SHELI_SOURCE: SourceLink = {
-  label: "תנאי מכבי שלי",
+  label: "מכבי — שימור ביציות מסיבות שאינן רפואיות",
   url: "https://www.maccabi4u.co.il/eligibilites/117173/",
 };
 
 const CLALIT_MUSHLAM_SOURCE: SourceLink = {
-  label: "תנאי כללית מושלם",
+  label: "כללית מושלם — שימור פוריות",
   url: "https://mushlam.clalit.co.il/he/content_worlds/pregnancy-and-childbirth/Pages/Fertility-preservation.aspx",
 };
 
-const SHEBA_SOURCE: SourceLink = {
-  label: "שיבא — הקפאת ביציות מבחירה",
-  url: "https://maternity.sheba.co.il/הקפאת-ביציות",
+const MEUHEDET_SIA_SOURCE: SourceLink = {
+  label: "תקנון מאוחדת שיא, ספטמבר 2026",
+  url: "https://www.meuhedet.co.il/media/8952/%D7%A9%D7%99%D7%90-%D7%A1%D7%A4%D7%98%D7%9E%D7%91%D7%A8-2026.pdf",
 };
 
-/** הערה משותפת לכל route של כללית מושלם — הרשימה טרם אומתה מול עמוד רשמי מפורש */
+const LEUMIT_GOLD_SOURCE: SourceLink = {
+  label: "לאומית — הקפאת ביציות מסיבות לא רפואיות",
+  url: "https://www.leumit.co.il/lobby-rights/rightspage/zakautpage/?sid=849&zid=116675",
+};
+
+export const LEUMIT_PROVIDERS_SOURCE: SourceLink = {
+  label: "לאומית — רשימת נותני השירות",
+  url: "https://www.leumit.co.il/outerservices/externalservicessearchresults/?serviceCode=14053",
+};
+
+const SHEBA_SOURCE: SourceLink = {
+  label: "שיבא — הקפאת ביציות",
+  url: "https://www.sheba.co.il/pregnancy/fertility/eggs-freezing",
+};
+
+/** קישורי "בדקי זכאות" לכל קופה — מוצגים רק ליד route קיים של אותה קופה */
+export const FUND_ELIGIBILITY_LINKS: Record<HealthFund, SourceLink> = {
+  מכבי: MACCABI_SHELI_SOURCE,
+  כללית: CLALIT_MUSHLAM_SOURCE,
+  מאוחדת: MEUHEDET_SIA_SOURCE,
+  לאומית: LEUMIT_GOLD_SOURCE,
+};
+
+/** הרובד שבו, לפי המקורות שנבדקו, קיימת ההטבה להקפאה מבחירה בכל קופה */
+export const FUND_PLANS: Record<HealthFund, string> = {
+  כללית: "מושלם פלטינום",
+  מכבי: "מכבי שלי",
+  מאוחדת: "מאוחדת שיא",
+  לאומית: "לאומית זהב",
+};
+
 const CLALIT_CAVEAT =
-  "רשימת בתי החולים בהסכם מבוססת על המידע העדכני שסופק ולא אומתה מול עמוד רשמי מפורש של כללית מושלם — מומלץ לאשר מול הקופה לפני קביעת תור.";
+  "כללית מפרסמת 3,500 ₪ למחזור במושלם פלטינום \"בבתי החולים שבהסדר\", אבל רשימת היחידות שבהסדר לא אותרה במקור רשמי — יש לאשר מול כללית שהמקום הזה בהסדר לפני קביעת תור.";
 
 /* ---------------------------------------------------------------------- */
-/* factory-ים למסלולי קופה חוזרים (אותם תנאי זכאות/מחיר על כמה בתי חולים) */
+/* factory-ים למסלולי קופה חוזרים                                          */
 /* ---------------------------------------------------------------------- */
 
 function maccabiSheliRoute(unitSlug: string): CareRoute {
@@ -119,15 +168,16 @@ function maccabiSheliRoute(unitSlug: string): CareRoute {
     ageMin: 31,
     ageMax: 38,
     waitingPeriodMonths: 12,
+    priceAmount: 3500,
+    priceBasis: "לטיפול",
     pricePerCycle: "3,500 ₪",
-    numberOfCycles: "עד 3 טיפולים או 25 ביציות, לפי המוקדם",
+    numberOfCycles: "עד 3 טיפולים או 25 ביציות, לפי המוקדם (מכסת כיסוי של מכבי שלי)",
     storageYears: 5,
     medicationsIncluded: false,
-    medicationNotes:
-      "תרופות הפריון אינן כלולות ב-3,500 ₪; ייתכנו הנחות ברכישתן במסגרת מסלול התרופות של מכבי זהב.",
-    eligibilityNote: "בכפוף לגיל 31–38, ותק של 12 חודשים במכבי שלי, וזכאות בפועל.",
+    medicationNotes: "תרופות הפריון אינן כלולות ב-3,500 ₪ ונרכשות בנפרד; ייתכנו הנחות במסגרת סל התרופות של מכבי זהב.",
+    eligibilityNote: "בכפוף לגיל 31–38, ותק של 12 חודשים במכבי שלי, וזכאות בפועל. ההטבה לא קיימת במכבי זהב/כסף.",
     source: MACCABI_SHELI_SOURCE,
-    verifiedAt: "16.9.2026",
+    verifiedAt: CHECKED,
     verificationStatus: "verified",
   };
 }
@@ -141,20 +191,49 @@ function clalitMushlamRoute(unitSlug: string, caveat = CLALIT_CAVEAT): CareRoute
     ageMin: 30,
     ageMax: 37,
     waitingPeriodMonths: 12,
+    priceAmount: 3500,
+    priceBasis: "למחזור טיפול",
     pricePerCycle: "3,500 ₪",
-    numberOfCycles: "גיל 30–35: עד 2 מחזורים/25 ביציות; גיל 36–37: עד 3 מחזורים/35 ביציות",
+    numberOfCycles:
+      "לפי המידע שהיה באתר: גיל 30–35 עד 2 מחזורים/25 ביציות; גיל 36–37 עד 3 מחזורים/35 ביציות — לא מופיע בעמוד כללית שנבדק, יש לאמת בתקנון",
     storageYears: 5,
     medicationsIncluded: false,
     medicationNotes: "התרופות אינן כלולות ב-3,500 ₪.",
-    eligibilityNote: "בכפוף לגיל 30–37, ותק של 12 חודשים במושלם פלטינום, וזכאות בפועל.",
+    eligibilityNote: "בכפוף לגיל 30–37 (עד גיל 38), ותק במושלם פלטינום, וזכאות בפועל.",
     source: CLALIT_MUSHLAM_SOURCE,
+    verifiedAt: CHECKED,
     verificationStatus: "needsVerification",
     caveat,
   };
 }
 
-/** מאוחדת שיא — לפי המפרט אין רשימת בתי חולים מאומתת בשום מקום, חוץ
- * משיבא שמפרסמת זאת בעצמה באתרה. לכן ה-route הזה משמש *רק* עבור שיבא. */
+function leumitGoldRoute(unitSlug: string): CareRoute {
+  return {
+    id: `${unitSlug}-leumit`,
+    fundingType: "healthFundArrangement",
+    healthFund: "לאומית",
+    requiredPlan: "לאומית זהב",
+    ageMin: 30,
+    ageMax: 37,
+    waitingPeriodMonths: 12,
+    priceAmount: 3491,
+    priceBasis: "לטיפול",
+    pricePerCycle: "3,491 ₪",
+    numberOfCycles: "עד 4 טיפולים או עד תקרת הביציות של משרד הבריאות, לפי המוקדם (מכסת כיסוי של לאומית זהב)",
+    storageYears: 5,
+    medicationsIncluded: false,
+    medicationNotes: "התרופות משולמות בנפרד, לפי תעריף סל הבריאות.",
+    eligibilityNote: "בכפוף לגיל 30–37 (עד גיל 38), 12 חודשי המתנה בלאומית זהב (לפי עדכון יולי 2026), וזכאות בפועל.",
+    approvalNote: "נדרשת הפניה מרופא/ת נשים בלאומית והבקשה עוברת לאישור מראש של הקופה.",
+    source: LEUMIT_GOLD_SOURCE,
+    verifiedAt: CHECKED,
+    verificationStatus: "verified",
+    caveat:
+      "עמוד הזכאות של לאומית מציין 3,491 ₪ לטיפול, ועמוד עדכון הרבדים מיולי 2026 מציין 3,500 ₪ — כדאי לוודא את הסכום המדויק מול הקופה. היחידה מופיעה ברשימת נותני השירות של לאומית.",
+  };
+}
+
+/** מאוחדת שיא — המחיר לפי התקנון, אבל אין רשימה רשמית שמאמתת הסדר עם שיבא */
 function meuhedetOnSheba(): CareRoute {
   return {
     id: "sheba-tel-hashomer-meuhedet",
@@ -165,34 +244,36 @@ function meuhedetOnSheba(): CareRoute {
     ageMax: 41,
     ageMaxExclusive: true,
     waitingPeriodMonths: 12,
+    priceAmount: 3500,
+    priceBasis: "למחזור טיפול",
     pricePerCycle: "3,500 ₪",
-    numberOfCycles: "עד 6 שאיבות ו/או עד 30 ביציות, לפי המוקדם",
+    numberOfCycles: "עד 6 שאיבות או 30 ביציות, לפי המוקדם (לפי תקנון מאוחדת שיא)",
     storageYears: 5,
     medicationsIncluded: false,
-    medicationNotes: "השתתפות עצמית בתרופות של עד 50% מהמחיר המרבי לצרכן, בהתאם לתקנון מאוחדת שיא.",
+    medicationNotes: "השתתפות עצמית בתרופות של עד 50% מהמחיר המרבי לצרכן, לפי תקנון מאוחדת שיא.",
     eligibilityNote: "בכפוף לגיל 30 עד לפני 41, ותק של 12 חודשים במאוחדת שיא, וזכאות בפועל.",
-    source: SHEBA_SOURCE,
-    verificationStatus: "verified",
+    source: MEUHEDET_SIA_SOURCE,
+    verifiedAt: CHECKED,
+    verificationStatus: "needsVerification",
+    caveat:
+      "המחיר (3,500 ₪) מופיע בתקנון מאוחדת שיא מספטמבר 2026 (סעיף 16.9, לפי קובץ המיפוי); בעמוד ותיק של מאוחדת עדיין מופיע 4,533 ₪. ההסדר עם שיבא עצמו לא אומת במקור רשמי — יש לאשר מול מאוחדת.",
   };
 }
 
-function selfPay(
-  unitSlug: string,
-  opts: {
-    pricePerCycle?: string;
-    numberOfCycles?: string;
-    included?: string;
-    notIncluded?: string;
-    verificationStatus: VerificationStatus;
-    caveat?: string;
-    source?: SourceLink;
-  }
-): CareRoute {
-  return {
-    id: `${unitSlug}-selfpay`,
-    fundingType: "selfPay",
-    ...opts,
-  };
+function selfPay(unitSlug: string, opts: Omit<CareRoute, "id" | "fundingType">): CareRoute {
+  return { id: `${unitSlug}-selfpay`, fundingType: "selfPay", ...opts };
+}
+
+/** מקום שבו לא אותר מחיר עצמי עדכני במקור רשמי (ר' קובץ המיפוי, 23.9.2026) */
+function selfPayUnverified(unitSlug: string, previouslyShown?: string, extra?: Partial<CareRoute>): CareRoute {
+  return selfPay(unitSlug, {
+    pricePerCycle: previouslyShown,
+    verifiedAt: CHECKED,
+    verificationStatus: "needsVerification",
+    caveat:
+      "לא אותר מחיר עצמי עדכני במקור רשמי. יש לבקש מהיחידה מחיר למחזור, מה כלול, תרופות, אחסון ותוקף ההצעה.",
+    ...extra,
+  });
 }
 
 /* ---------------------------------------------------------------------- */
@@ -218,23 +299,27 @@ const sorokaId = slug("סורוקה");
 const hillelYaffeId = slug("הלל יפה");
 const hadassahHarHatzofimId = slug("הדסה הר הצופים");
 const haemekId = slug("העמק");
-const nazarethId = slug("בית החולים האנגלי / הצרפתי / המשפחה הקדושה (נצרת)");
+const nazarethId = slug("בית החולים האנגלי (נצרת)");
 const assutaAshdodId = slug("אסותא אשדוד");
 
 const publicUnits: CareUnit[] = [
   {
     id: shamirId,
     name: "שמיר – אסף הרופא",
+    city: "באר יעקב",
     region: "מרכז",
     setting: "public",
     isActive: true,
+    website: { label: "שמיר — הקפאת ביציות", url: "https://vitrofertilization.shamir.org/oocyte-freezing/" },
     routes: [
       selfPay(shamirId, {
-        pricePerCycle: "6,500 ₪ לסבב",
-        numberOfCycles: "12,000 ₪ לשני סבבים מראש; דמי פתיחת תיק 300 ₪, מנוכים אם ממשיכים בטיפול",
+        priceAmount: 6500,
+        priceBasis: "למחזור ראשון",
+        pricePerCycle: "6,500 ₪",
+        verifiedAt: CHECKED,
         verificationStatus: "verified",
         caveat:
-          "באתר היחידה מופיע גם נתון ישן של 4,000 ₪ עבור מאוחדת — זהו מחיר לא-עדכני ואינו משמש כאן; תנאי מאוחדת שיא הנוכחיים (3,500 ₪) עדכניים יותר ומופיעים בהסדרי הקופה, לא בעמוד היחידה.",
+          "מחיר לשני סבבים ודמי פתיחת תיק לא אותרו באתר היחידה — יש לברר. באתר מופיע גם נתון ישן של 4,000 ₪ למאוחדת, שאינו עדכני.",
         source: { label: "שמיר — הקפאת ביציות", url: "https://vitrofertilization.shamir.org/oocyte-freezing/" },
       }),
     ],
@@ -246,62 +331,90 @@ const publicUnits: CareUnit[] = [
     region: "מרכז",
     setting: "public",
     isActive: true,
+    website: SHEBA_SOURCE,
+    phone: { number: "03-5305000", sourceLabel: "רשימת נותני השירות של לאומית" },
     routes: [
       selfPay(shebaId, {
-        pricePerCycle: "7,500 ₪ לסבב אחד",
-        numberOfCycles: "14,000 ₪ לשני סבבים",
-        included: "שאיבה, הקפאת ביציות, אחסון לחמש שנים ומעקב רופא/ת פוריות",
+        priceAmount: 7500,
+        priceBasis: "למחזור שאיבה אחד",
+        pricePerCycle: "7,500 ₪",
+        priceExtra: "14,000 ₪ לשני מחזורים",
+        storageYears: 5,
+        included: "שאיבה, הקפאה ושמירה לחמש שנים",
+        verifiedAt: CHECKED,
         verificationStatus: "verified",
         source: SHEBA_SOURCE,
       }),
       maccabiSheliRoute(shebaId),
-      clalitMushlamRoute(shebaId, "שיבא מפרסמת בעצמה זכאות עם עמידה בתנאי כללית מושלם — מומלץ לאשר את הפרטים המדויקים מול הקופה."),
+      clalitMushlamRoute(
+        shebaId,
+        "כללית מפרסמת 3,500 ₪ למחזור \"בבתי החולים שבהסדר\", ושיבא מציינת זכאות לפי תנאי כללית מושלם — אבל רשימה רשמית של כללית לא אותרה. יש לאשר מול כללית."
+      ),
       meuhedetOnSheba(),
+      leumitGoldRoute(shebaId),
     ],
   },
   {
     id: wolfsonId,
     name: "וולפסון",
+    city: "חולון",
     region: "מרכז",
     setting: "public",
     isActive: true,
+    website: { label: "וולפסון — היחידה להפריה חוץ גופית", url: "https://www.nashim.net/?CategoryID=1142" },
     routes: [
       selfPay(wolfsonId, {
-        pricePerCycle: "7,000 ₪ לשאיבה",
-        numberOfCycles: "14,000 ₪ אם אין חבילת הנחה",
+        priceAmount: 7000,
+        priceBasis: "לשאיבה לשימור",
+        pricePerCycle: "7,000 ₪",
+        verifiedAt: CHECKED,
         verificationStatus: "verified",
-        source: { label: "וולפסון — שימור פוריות", url: "https://wolfsonhealth.com/הקפאת-ביציות/" },
+        caveat: "בעמוד היחידה יש גם מידע ישן על מגבלות הטיפול — אין להסיק ממנו תנאי זכאות עדכניים.",
+        source: { label: "וולפסון — שימור ביציות", url: "https://www.nashim.net/?CategoryID=1142" },
       }),
     ],
   },
   {
     id: hadassahEinKeremId,
     name: "הדסה עין כרם",
+    city: "ירושלים",
     region: "ירושלים",
     setting: "public",
     isActive: true,
+    phone: { number: "02-6777111", sourceLabel: "רשימת נותני השירות של לאומית" },
     routes: [
-      selfPay(hadassahEinKeremId, {
-        pricePerCycle: "7,500 ₪",
-        numberOfCycles: "12,000 ₪ לשני סבבים",
-        verificationStatus: "needsVerification",
-        caveat: "אחסון, תרופות ומדיניות החזר טרם אומתו.",
-      }),
+      selfPayUnverified(hadassahEinKeremId, "7,500 ₪"),
       clalitMushlamRoute(hadassahEinKeremId),
+      leumitGoldRoute(hadassahEinKeremId),
     ],
   },
   {
     id: shaareiZedekId,
     name: "שערי צדק",
+    city: "ירושלים",
     region: "ירושלים",
     setting: "public",
     isActive: true,
+    website: {
+      label: "שערי צדק — שימור ביציות מבחירה",
+      url: "https://www.szmc.org.il/departments/obstetrics-and-gynecology/ivf/madrich-ivf/shimur-mbhira/",
+    },
+    phone: { number: "02-6666055", sourceLabel: "עמוד היחידה בשערי צדק" },
     routes: [
       selfPay(shaareiZedekId, {
-        pricePerCycle: "6,500 ₪",
-        numberOfCycles: "12,000 ₪ לשניים; פורסמו גם חבילות ל־3–4 סבבים",
-        verificationStatus: "needsVerification",
-        caveat: "מחיר עדכני ותנאי החזר טרם אומתו.",
+        priceAmount: 8000,
+        priceBasis: "למחזור טיפול",
+        pricePerCycle: "8,000 ₪",
+        priceExtra: "345 ₪ דמי פתיחת תיק, מתקזזים אם ממשיכים לטיפול. מחירי חבילות למספר מחזורים לא אותרו.",
+        storageYears: 5,
+        included: "גירוי שחלתי, מעקב זקיקים, שאיבה והקפאה; 5 שנות אחסון ראשונות ללא עלות נוספת",
+        verifiedAt: CHECKED,
+        verificationStatus: "verified",
+        caveat: "אחרי 5 שנים עלות האחסון נקבעת לפי משרד הבריאות.",
+        source: {
+          label: "שערי צדק — שימור ביציות מבחירה",
+          url: "https://www.szmc.org.il/departments/obstetrics-and-gynecology/ivf/madrich-ivf/shimur-mbhira/",
+        },
       }),
       clalitMushlamRoute(shaareiZedekId),
     ],
@@ -309,86 +422,80 @@ const publicUnits: CareUnit[] = [
   {
     id: naharyaId,
     name: "המרכז הרפואי לגליל – נהריה",
+    city: "נהריה",
     region: "צפון",
     setting: "public",
     isActive: true,
-    routes: [
-      selfPay(naharyaId, {
-        pricePerCycle: "6,700 ₪",
-        numberOfCycles: "5,300 ₪ לסבב שני; 12,000 ₪ יחד",
-        verificationStatus: "needsVerification",
-        caveat: "מה כלול ומספר שנות אחסון טרם אומתו.",
-      }),
-    ],
+    routes: [selfPayUnverified(naharyaId, "6,700 ₪; 5,300 ₪ לסבב שני")],
   },
   {
     id: poriyaId,
     name: "פוריה",
+    city: "טבריה",
     region: "צפון",
     setting: "public",
     isActive: true,
-    routes: [
-      selfPay(poriyaId, {
-        pricePerCycle: "6,500 ₪",
-        numberOfCycles: "כ־5,500 ₪ מסבב שני",
-        verificationStatus: "needsVerification",
-        caveat: "מחיר עדכני ואחסון טרם אומתו.",
-      }),
-    ],
+    routes: [selfPayUnverified(poriyaId, "6,500 ₪; כ־5,500 ₪ מסבב שני")],
   },
   {
     id: rambamId,
     name: "רמב״ם",
+    city: "חיפה",
     region: "צפון",
     setting: "public",
     isActive: true,
+    website: {
+      label: "רמב״ם — שימור פוריות",
+      url: "https://www.rambam.org.il/?catid=%7BA03BFCDB-688F-4FF0-A8A4-D41705AB9359%7D",
+    },
     routes: [
       selfPay(rambamId, {
+        priceAmount: 6500,
+        priceBasis: "למחזור גירוי אחד",
         pricePerCycle: "6,500 ₪",
+        verifiedAt: CHECKED,
         verificationStatus: "verified",
+        caveat: "בעמוד יש גם מידע ישן על מספר סבבים — אין להסיק ממנו תנאי זכאות עדכניים.",
+        source: {
+          label: "רמב״ם — שימור פוריות",
+          url: "https://www.rambam.org.il/?catid=%7BA03BFCDB-688F-4FF0-A8A4-D41705AB9359%7D",
+        },
       }),
     ],
   },
   {
     id: beneiZionId,
     name: "בני ציון",
+    city: "חיפה",
     region: "צפון",
     setting: "public",
     isActive: true,
-    routes: [
-      selfPay(beneiZionId, {
-        pricePerCycle: "כ־6,500 ₪",
-        verificationStatus: "needsVerification",
-        caveat: "מחיר מלא ואחסון טרם אומתו.",
-      }),
-    ],
+    routes: [selfPayUnverified(beneiZionId, "כ־6,500 ₪")],
   },
   {
     id: carmelId,
     name: "כרמל",
+    city: "חיפה",
     region: "צפון",
     setting: "public",
     isActive: true,
-    routes: [
-      selfPay(carmelId, {
-        pricePerCycle: "כ־8,500 ₪",
-        verificationStatus: "needsVerification",
-        caveat: "מחיר עדכני טרם אומת.",
-      }),
-      clalitMushlamRoute(carmelId),
-    ],
+    routes: [selfPayUnverified(carmelId, "כ־8,500 ₪"), clalitMushlamRoute(carmelId)],
   },
   {
     id: meirId,
     name: "מאיר",
+    city: "כפר סבא",
     region: "מרכז",
     setting: "public",
     isActive: true,
+    website: { label: "מאיר — היחידה להפריה חוץ גופית", url: "https://hospitals.clalit.co.il/meir/he/med/gyne/ivf/Pages/cons.aspx" },
     routes: [
       selfPay(meirId, {
-        pricePerCycle: "כ־7,000 ₪",
+        pricePerCycle: "7,000 ₪ למחזור טיפול (מופיע בעמוד היחידה, מועד הפרסום לא ברור)",
+        verifiedAt: CHECKED,
         verificationStatus: "needsVerification",
-        caveat: "זמינות, אחסון ותרופות טרם אומתו.",
+        caveat: "מועד פרסום המחיר בעמוד היחידה אינו ברור — יש לקבל אישור מחיר עדכני לפני הסתמכות עליו.",
+        source: { label: "מאיר — ייעוץ ושימור", url: "https://hospitals.clalit.co.il/meir/he/med/gyne/ivf/Pages/cons.aspx" },
       }),
       clalitMushlamRoute(meirId),
     ],
@@ -396,29 +503,27 @@ const publicUnits: CareUnit[] = [
   {
     id: belinsonId,
     name: "בילינסון",
+    city: "פתח תקווה",
     region: "מרכז",
     setting: "public",
     isActive: true,
-    routes: [
-      selfPay(belinsonId, {
-        pricePerCycle: "כ־7,000 ₪",
-        verificationStatus: "needsVerification",
-        caveat: "מחיר וזמן המתנה טרם אומתו.",
-      }),
-      clalitMushlamRoute(belinsonId),
-    ],
+    routes: [selfPayUnverified(belinsonId, "כ־7,000 ₪"), clalitMushlamRoute(belinsonId)],
   },
   {
     id: kaplanId,
     name: "קפלן",
+    city: "רחובות",
     region: "מרכז",
     setting: "public",
     isActive: true,
+    website: { label: "קפלן — הקפאת ביציות", url: "https://hospitals.clalit.co.il/kaplan/he/med_units/ivf/Pages/eggfreez.aspx" },
     routes: [
       selfPay(kaplanId, {
-        pricePerCycle: "כ־6,200 ₪",
-        verificationStatus: "needsVerification",
-        caveat: "מחיר עדכני ומה כלול טרם אומתו.",
+        pricePerCycle: "ב-2022: 6,214 ₪ למבוטחות כללית, 6,338 ₪ לאחרות (מחיר היסטורי)",
+        verifiedAt: CHECKED,
+        verificationStatus: "outdatedDoNotUse",
+        caveat: "המחיר היחיד שאותר הוא מעמוד מ-30.1.2022 — יש לבקש מחירון נוכחי מהיחידה.",
+        source: { label: "קפלן — הקפאת ביציות (2022)", url: "https://hospitals.clalit.co.il/kaplan/he/med_units/ivf/Pages/eggfreez.aspx" },
       }),
       clalitMushlamRoute(kaplanId),
     ],
@@ -426,96 +531,90 @@ const publicUnits: CareUnit[] = [
   {
     id: ichilovId,
     name: "איכילוב",
+    city: "תל אביב",
     region: "מרכז",
     setting: "public",
     isActive: true,
-    routes: [
-      selfPay(ichilovId, {
-        pricePerCycle: "כ־9,245 ₪",
-        verificationStatus: "needsVerification",
-        caveat: "מחיר עדכני ומספר שנות אחסון טרם אומתו.",
-      }),
-    ],
+    routes: [selfPayUnverified(ichilovId, "כ־9,245 ₪")],
   },
   {
     id: barzilaiId,
     name: "ברזילי",
+    city: "אשקלון",
     region: "דרום",
     setting: "public",
     isActive: true,
-    routes: [
-      selfPay(barzilaiId, {
-        pricePerCycle: "כ־6,500 ₪",
-        numberOfCycles: "כ־12,000 ₪ לשני סבבים",
-        verificationStatus: "needsVerification",
-        caveat: "תנאי החבילה והחזר טרם אומתו.",
-      }),
-    ],
+    phone: { number: "08-6745555", sourceLabel: "רשימת נותני השירות של לאומית" },
+    routes: [selfPayUnverified(barzilaiId, "כ־6,500 ₪"), leumitGoldRoute(barzilaiId)],
   },
   {
     id: sorokaId,
     name: "סורוקה",
+    city: "באר שבע",
     region: "דרום",
     setting: "public",
     isActive: true,
-    routes: [
-      selfPay(sorokaId, {
-        pricePerCycle: "פורסם מחיר של כ־14,000 ₪ לשני סבבים",
-        numberOfCycles: "14,000 ₪",
-        verificationStatus: "needsVerification",
-        caveat: "מחיר לסבב יחיד ומה כלול טרם אומתו.",
-      }),
-      clalitMushlamRoute(sorokaId),
-    ],
+    routes: [selfPayUnverified(sorokaId, "כ־14,000 ₪ לשני סבבים"), clalitMushlamRoute(sorokaId)],
   },
   {
     id: hillelYaffeId,
     name: "הלל יפה",
+    city: "חדרה",
     region: "צפון",
     setting: "public",
     isActive: true,
+    website: { label: "הלל יפה — שימור הפוריות", url: "https://hymc.org.il/?ArticleID=8603&CategoryID=2253" },
     routes: [
       selfPay(hillelYaffeId, {
+        priceAmount: 8000,
+        priceBasis: "למחזור טיפול",
         pricePerCycle: "8,000 ₪",
-        included: "כל תהליך השימור (שאיבה והקפאה)",
+        included: "תהליך השימור (שאיבה והקפאה)",
         notIncluded: "תרופות לגירוי שחלתי",
+        medicationsIncluded: false,
+        medicationNotes: "תרופות לגירוי שחלתי אינן כלולות.",
+        verifiedAt: CHECKED,
         verificationStatus: "verified",
-        caveat:
-          "באתר היחידה מופיע גם הנתון 6,500 ₪ בתיאור מקוצר של העמוד, לצד 8,000 ₪ בפירוט המלא בהמשכו — מומלץ לאמת טלפונית (04-7744750) איזה מהם המחיר המעודכן.",
-        source: { label: "הלל יפה — שימור הפוריות", url: "https://hymc.org.il/?CategoryID=2253&ArticleID=8603" },
+        caveat: "בתיאור המקוצר של העמוד מופיע גם 6,500 ₪ — כדאי לוודא טלפונית (04-7744750) את המחיר העדכני.",
+        source: { label: "הלל יפה — שימור הפוריות", url: "https://hymc.org.il/?ArticleID=8603&CategoryID=2253" },
       }),
     ],
   },
   {
     id: hadassahHarHatzofimId,
     name: "הדסה הר הצופים",
+    city: "ירושלים",
     region: "ירושלים",
     setting: "public",
     isActive: true,
-    routes: [
-      selfPay(hadassahHarHatzofimId, {
-        verificationStatus: "needsVerification",
-        caveat: "מחיר, מה כלול ואחסון טרם אומתו — לא פורסם מחיר תשלום עצמי באתר היחידה.",
-        source: {
-          label: "הדסה הר הצופים — שימור פוריות",
-          url: "https://he.hadassah.org.il/women/fertility-conservation/",
-        },
-      }),
-    ],
+    website: { label: "הדסה הר הצופים — שימור פוריות", url: "https://he.hadassah.org.il/women/fertility-conservation/" },
+    routes: [selfPayUnverified(hadassahHarHatzofimId)],
   },
   {
     id: haemekId,
     name: "העמק",
+    city: "עפולה",
     region: "צפון",
     setting: "public",
     isActive: true,
+    website: {
+      label: "העמק — מרפאת פוריות",
+      url: "https://hospitals.clalit.co.il/emek/he/departmentsandclinics/women_birth_department/moadon_yoldot_hila/Pages/fertility_clinic.aspx",
+    },
     routes: [
       selfPay(haemekId, {
+        priceAmount: 6300,
+        priceApprox: true,
+        priceBasis: "למחזור טיפול",
         pricePerCycle: "כ־6,300 ₪",
+        medicationsIncluded: false,
+        medicationNotes: "התרופות אינן כלולות.",
+        verifiedAt: CHECKED,
         verificationStatus: "verified",
+        caveat: "היחידה מפרסמת מחיר מקורב — לא מחיר סופי או כולל.",
         source: {
-          label: "מרכז רפואי העמק — מעבדת IVF",
-          url: "https://hospitals.clalit.co.il/emek/he/departmentsandclinics/women_birth_department/moadon_yoldot_hila/Pages/ivf_laborotory.aspx",
+          label: "העמק — מרפאת פוריות",
+          url: "https://hospitals.clalit.co.il/emek/he/departmentsandclinics/women_birth_department/moadon_yoldot_hila/Pages/fertility_clinic.aspx",
         },
       }),
       clalitMushlamRoute(haemekId),
@@ -523,42 +622,36 @@ const publicUnits: CareUnit[] = [
   },
   {
     id: nazarethId,
-    name: "בית החולים האנגלי / הצרפתי / המשפחה הקדושה (נצרת)",
+    name: "בית החולים האנגלי (נצרת)",
+    city: "נצרת",
     region: "צפון",
     setting: "public",
     isActive: true,
+    website: { label: "עמותת איילה — רשימת יחידות", url: "https://www.ayala.org.il/ViewContent.aspx?CategoryId=15286" },
     routes: [
-      selfPay(nazarethId, {
-        verificationStatus: "needsVerification",
-        caveat: "מחיר, מה כלול ופרטי ההליך בפועל טרם אותרו.",
-        source: {
-          label: "משרד הבריאות — רשימת יחידות IVF מוסמכות",
-          url: "https://www.gov.il/he/pages/ivf-inst-cryopreservation",
-        },
+      selfPayUnverified(nazarethId, undefined, {
+        caveat:
+          "לא אותר מחיר עצמי. בעבר הרשומה כללה גם את בית החולים הצרפתי והמשפחה הקדושה — לא אומת שהם מבצעים הקפאת ביציות, ולכן הם לא מוצגים.",
       }),
     ],
   },
   {
     id: assutaAshdodId,
     name: "אסותא אשדוד",
+    city: "אשדוד",
     region: "דרום",
     setting: "public",
     isActive: true,
-    routes: [
-      selfPay(assutaAshdodId, {
-        verificationStatus: "needsVerification",
-        caveat: "מחיר ומה כלול טרם אותרו.",
-        source: {
-          label: "אסותא אשדוד — היחידה לפריון ולהפריה חוץ גופית",
-          url: "https://www.assutaashdod.co.il/?catid=%7B6b314f6f-f644-4645-9172-848e7b5115dc%7D",
-        },
-      }),
-    ],
+    website: {
+      label: "אסותא אשדוד — פריון והפריה חוץ גופית",
+      url: "https://www.assutaashdod.co.il/?catid=%7B6b314f6f-f644-4645-9172-848e7b5115dc%7D",
+    },
+    routes: [selfPayUnverified(assutaAshdodId)],
   },
 ];
 
 /* ---------------------------------------------------------------------- */
-/* מרכזים פרטיים — אין להם מחיר תשלום-עצמי כולל ואחיד מפורסם                */
+/* מרכזים פרטיים                                                           */
 /* ---------------------------------------------------------------------- */
 
 const elishaId = slug("מדיקה אלישע");
@@ -566,7 +659,8 @@ const assutaRamatHachayalId = slug("אסותא רמת החייל");
 const assutaRishonId = slug("אסותא ראשון לציון");
 const herzliyaId = slug("הרצליה מדיקל סנטר");
 
-const NO_PRICE_CAVEAT = "מחיר לא אומת — יש לברר מול היחידה.";
+const PRIVATE_NOTE =
+  "ביחידה פרטית כדאי להפריד בין תשלום לרופא/ה, תשלום ליחידה, תרופות ואחסון, ולוודא מי מבצע/ת בפועל את השאיבה.";
 
 const privateUnits: CareUnit[] = [
   {
@@ -576,13 +670,15 @@ const privateUnits: CareUnit[] = [
     region: "צפון",
     setting: "private",
     isActive: true,
+    phone: { number: "04-8300000", sourceLabel: "רשימת נותני השירות של לאומית" },
     routes: [
-      selfPay(elishaId, { verificationStatus: "needsVerification", caveat: NO_PRICE_CAVEAT }),
+      selfPayUnverified(elishaId, undefined, { caveat: `לא אותר מחיר עצמי במקור רשמי. ${PRIVATE_NOTE}` }),
       maccabiSheliRoute(elishaId),
       clalitMushlamRoute(
         elishaId,
-        'רשימת כללית מושלם מציינת מוסד בשם "אלישע" — לא אומת בוודאות שמדובר באותה יחידה (מדיקה אלישע), ולכן יש לאשר את ההתאמה מול הקופה לפני הסתמכות על route זה.'
+        'במידע הקודם הופיע מוסד בשם "אלישע" בהקשר של כללית מושלם, אך לא אותרה רשימה רשמית של כללית — יש לאשר מול כללית אם מדיקה אלישע בהסדר.'
       ),
+      leumitGoldRoute(elishaId),
     ],
   },
   {
@@ -593,29 +689,29 @@ const privateUnits: CareUnit[] = [
     setting: "private",
     isActive: true,
     routes: [
-      selfPay(assutaRamatHachayalId, { verificationStatus: "needsVerification", caveat: NO_PRICE_CAVEAT }),
+      selfPayUnverified(assutaRamatHachayalId, undefined, { caveat: `לא אותר מחיר עצמי במקור רשמי. ${PRIVATE_NOTE}` }),
       maccabiSheliRoute(assutaRamatHachayalId),
     ],
   },
   {
     id: assutaRishonId,
     name: "אסותא ראשון לציון",
+    city: "ראשון לציון",
     region: "מרכז",
     setting: "private",
     isActive: true,
-    routes: [selfPay(assutaRishonId, { verificationStatus: "needsVerification", caveat: NO_PRICE_CAVEAT })],
+    routes: [selfPayUnverified(assutaRishonId, undefined, { caveat: `לא אותר מחיר עצמי במקור רשמי. ${PRIVATE_NOTE}` })],
   },
   {
     id: herzliyaId,
     name: "הרצליה מדיקל סנטר",
+    city: "הרצליה",
     region: "מרכז",
     setting: "private",
     isActive: true,
     routes: [
-      selfPay(herzliyaId, {
-        verificationStatus: "needsVerification",
-        caveat:
-          "פורסם סדר גודל של כ-10,000–15,000 ₪ לסבב (לא מחירון רשמי), בתוספת עלות תרופות אפשרית משמעותית — יש לקבל הצעת מחיר מדויקת ועדכנית מהמרכז.",
+      selfPayUnverified(herzliyaId, "סדר גודל שפורסם (לא מחירון רשמי): כ־10,000–15,000 ₪ לסבב", {
+        caveat: `לא אותר מחירון רשמי. ${PRIVATE_NOTE}`,
       }),
     ],
   },
@@ -640,4 +736,42 @@ export function fundsWithArrangement(unit: CareUnit): HealthFund[] {
     if (r.fundingType === "healthFundArrangement" && r.healthFund) set.add(r.healthFund);
   }
   return [...set];
+}
+
+export function findRoute(unit: CareUnit, routeId: string): CareRoute | undefined {
+  return unit.routes.find((r) => r.id === routeId);
+}
+
+/** שם קצר למסלול: "תשלום עצמי" / "מכבי שלי" */
+export function routeName(route: CareRoute): string {
+  return route.fundingType === "selfPay" ? "תשלום עצמי" : (route.requiredPlan ?? `הסדר ${route.healthFund}`);
+}
+
+export type PriceLabelKind = "copay" | "selfPay" | "pending";
+
+/**
+ * תווית המחיר לתצוגה: "השתתפות עצמית לסבב" (מחיר קופה שפורסם),
+ * "מחיר בתשלום עצמי" (מחיר יחידה שפורסם), או "מחיר בבירור".
+ */
+export function priceLabel(route: CareRoute): { kind: PriceLabelKind; label: string } {
+  if (route.priceAmount == null) return { kind: "pending", label: "מחיר בבירור" };
+  if (route.fundingType === "healthFundArrangement") return { kind: "copay", label: "השתתפות עצמית לסבב" };
+  return { kind: "selfPay", label: "מחיר בתשלום עצמי" };
+}
+
+export function formatShekel(n: number, approx?: boolean): string {
+  return `${approx ? "כ־" : ""}${n.toLocaleString("he-IL")} ₪`;
+}
+
+/** מה ידוע על תרופות — ניסוח קצר לכרטיס/השוואה */
+export function medicationSummary(route: CareRoute): string {
+  if (route.medicationsIncluded === true) return "כלולות במחיר";
+  if (route.medicationNotes) return route.medicationNotes;
+  if (route.medicationsIncluded === false) return "אינן כלולות";
+  return "לא אומת";
+}
+
+export function storageSummary(route: CareRoute): string {
+  if (route.storageYears) return `${route.storageYears} שנות אחסון כלולות`;
+  return "לא אומת";
 }

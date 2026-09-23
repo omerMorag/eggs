@@ -3,7 +3,7 @@
 import { X } from "lucide-react";
 import FloatingPortal from "@/components/shared/FloatingPortal";
 import type { CareUnit } from "@/data/careUnits";
-import { fundsWithArrangement, routesForFund, selfPayRoute } from "@/data/careUnits";
+import { formatShekel, fundsWithArrangement, routesForFund, selfPayRoute } from "@/data/careUnits";
 
 interface SummaryTableModalProps {
   open: boolean;
@@ -34,7 +34,10 @@ function summarize(unit: CareUnit): UnitSummary {
       ? funds
           .map((fund) => {
             const route = routesForFund(unit, fund)[0];
-            return `${fund}: ${route?.pricePerCycle ?? "לא פורסם"}`;
+            if (!route) return `${fund}: לא אומת`;
+            const price = route.priceAmount != null ? formatShekel(route.priceAmount, route.priceApprox) : "מחיר בבירור";
+            const pending = route.verificationStatus === "verified" ? "" : " (ההסדר ביחידה דורש בירור)";
+            return `${route.requiredPlan ?? fund}: ${price}${pending}`;
           })
           .join(" · ")
       : "אין הסדר מאומת";
@@ -55,10 +58,8 @@ function summarize(unit: CareUnit): UnitSummary {
           ? "תלוי במסלול"
           : "יש לברר";
 
-  const verifiedDates = unit.routes
-    .filter((r) => r.verificationStatus === "verified" && r.verifiedAt)
-    .map((r) => r.verifiedAt as string);
-  const updated = verifiedDates.length > 0 ? verifiedDates.sort().at(-1)! : "טרם אומת";
+  const checkedDates = unit.routes.filter((r) => r.verifiedAt).map((r) => r.verifiedAt as string);
+  const updated = checkedDates.length > 0 ? checkedDates[0] : "טרם נבדק";
 
   return {
     id: unit.id,
@@ -67,7 +68,10 @@ function summarize(unit: CareUnit): UnitSummary {
     setting: unit.setting === "public" ? "ציבורי" : "פרטי",
     arrangements: funds.length > 0 ? funds.join(", ") : "אין",
     fundPrice,
-    selfPayPrice: selfPay?.pricePerCycle ?? "לא אומת",
+    selfPayPrice:
+      selfPay?.priceAmount != null
+        ? `${formatShekel(selfPay.priceAmount, selfPay.priceApprox)}${selfPay.priceBasis ? ` ${selfPay.priceBasis}` : ""}`
+        : "מחיר בבירור",
     meds,
     storage,
     doctorChoice,
@@ -81,11 +85,11 @@ const COLUMNS: { key: keyof UnitSummary; label: string }[] = [
   { key: "setting", label: "מסגרת" },
   { key: "arrangements", label: "הסדרים עם קופות" },
   { key: "fundPrice", label: "מחיר דרך הקופה" },
-  { key: "selfPayPrice", label: "מחיר ללא הסדר" },
+  { key: "selfPayPrice", label: "מחיר בתשלום עצמי" },
   { key: "meds", label: "תרופות" },
   { key: "storage", label: "אחסון" },
   { key: "doctorChoice", label: "בחירת רופא" },
-  { key: "updated", label: "עודכן לאחרונה" },
+  { key: "updated", label: "נבדק לאחרונה" },
 ];
 
 /** טבלת סיכום מלאה של כל המקומות המסוננים כרגע — דסקטופ: טבלה גוללת; מובייל: כרטיסים, לא עמודות דחוסות */
@@ -187,7 +191,7 @@ export default function SummaryTableModal({ open, units, onClose }: SummaryTable
                     <dd className="mt-0.5">{row.doctorChoice}</dd>
                   </div>
                 </dl>
-                <p className="mt-2 text-[11px] text-ink/40">עודכן לאחרונה: {row.updated}</p>
+                <p className="mt-2 text-[11px] text-ink/40">נבדק לאחרונה: {row.updated}</p>
               </div>
             ))}
           </div>

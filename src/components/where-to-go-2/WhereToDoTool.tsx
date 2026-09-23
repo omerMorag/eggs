@@ -1,16 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ListFilter, TableProperties } from "lucide-react";
 import type { JourneyProgress } from "@/lib/useJourneyProgress";
-import { careUnits, routesForFund, type CareUnit, type HealthFund, type Setting } from "@/data/careUnits";
-import RegionStep, { type RegionFilter } from "./RegionStep";
-import HealthFundStep, { type HealthFundFilter } from "./HealthFundStep";
+import { careUnits, FUND_PLANS, routesForFund, type CareUnit, type Setting } from "@/data/careUnits";
+import BeforeChoosingCard from "./BeforeChoosingCard";
+import RouteCalculator, { type RegionFilter } from "./RouteCalculator";
 import CareUnitCard from "./CareUnitCard";
-import CareUnitDetail from "./CareUnitDetail";
 import ComparisonBar from "./ComparisonBar";
-import ComparisonTable from "./ComparisonTable";
+import ComparisonResults, { type ComparedItem } from "./ComparisonResults";
 import SummaryTableModal from "./SummaryTableModal";
+import { displayedRoute, usesFundRoute, type RouteSelection } from "./routeSelection";
 
 const MAX_COMPARISON = 3;
 
@@ -26,156 +26,245 @@ interface WhereToDoToolProps {
   progress: JourneyProgress;
 }
 
+/** השוואה = מקום + מסלול מסוים (לא רק מקום), כדי שמחירים לא יתערבבו */
+interface CompareKey {
+  unitId: string;
+  routeId: string;
+}
+
 /**
- * אשף חדש בן 2 שלבים בלבד (תיקון-שורש WHERE TO DO, 22.9.2026): קופה ← אזור.
- * אין יותר שאלת ציבורי/פרטי/מסובסד באשף עצמו — זו הייתה טעות מודל (ר'
- * ההסבר הארוך בראש careUnits.ts) והוסרה כליל יחד עם TrackTypeStep.tsx.
- * מיד אחרי שני השלבים מוצגות התוצאות, בלי שאלות נוספות. "מסגרת"
- * (ציבורי/פרטי) זמינה רק כפילטר משני, אופציונלי, מעל התוצאות.
+ * "איפה כדאי לעשות?" — מסלול אחד רציף: כרטיסיית הסבר ← מחשבון מסלול
+ * (דרך מימון, קופה ורובד, אזור, מספר סבבים) ← כרטיסי מקומות שמציגים את
+ * המסלול והמחיר לפי הבחירה ← השוואה. בחירת מקום בכרטיס מעדכנת את המחשבון.
+ * הכול עובד בלי התחברות (state מקומי בלבד; "בחרתי" נשמר דרך
+ * useJourneyProgress, שעובד גם כאורחת).
  */
 export default function WhereToDoTool({ progress }: WhereToDoToolProps) {
-  const [fund, setFund] = useState<HealthFundFilter>("all");
+  const [selection, setSelection] = useState<RouteSelection>({ path: "undecided", fund: null, plan: "yes" });
   const [region, setRegion] = useState<RegionFilter>("all");
   const [setting, setSetting] = useState<SettingFilter>("all");
-  const [openUnitId, setOpenUnitId] = useState<string | null>(null);
-  const [comparisonIds, setComparisonIds] = useState<string[]>([]);
+  const [cycles, setCycles] = useState(1);
+  const [doctorWanted, setDoctorWanted] = useState(false);
+  const [doctorAmount, setDoctorAmount] = useState<number | undefined>(undefined);
+  const [calcUnitId, setCalcUnitId] = useState<string | null>(null);
+  const [compare, setCompare] = useState<CompareKey[]>([]);
   const [comparisonOpen, setComparisonOpen] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
 
-  const selectedFund: HealthFund | null = fund === "all" ? null : fund;
+  const calcRef = useRef<HTMLDivElement>(null);
+  const comparisonHeadingRef = useRef<HTMLHeadingElement>(null);
 
-  const base = useMemo(() => {
-    return careUnits.filter((u) => {
-      if (!u.isActive) return false;
-      if (region !== "all" && u.region !== region) return false;
-      if (setting !== "all" && u.setting !== setting) return false;
-      return true;
-    });
-  }, [region, setting]);
+  const medicalMode = selection.path === "medical";
+  const fundMode = usesFundRoute(selection);
 
-  const { matched, others } = useMemo(() => {
-    if (!selectedFund) return { matched: [] as CareUnit[], others: base };
-    const m = base.filter((u) => routesForFund(u, selectedFund).length > 0);
-    const o = base.filter((u) => routesForFund(u, selectedFund).length === 0);
-    return { matched: m, others: o };
-  }, [base, selectedFund]);
-
-  // §4: כשנבחרה קופה — מתאימים קודם, אבל שום יחידה לא מוסתרת (others נשאר ברשימה)
-  const orderedResults = selectedFund ? [...matched, ...others] : base;
-
-  const openUnit = openUnitId ? (careUnits.find((u) => u.id === openUnitId) ?? null) : null;
-  const comparisonUnits = comparisonIds
-    .map((id) => careUnits.find((u) => u.id === id))
-    .filter((u): u is CareUnit => Boolean(u));
-
-  const toggleComparison = (id: string) => {
-    setComparisonIds((prev) => {
-      if (prev.includes(id)) return prev.filter((x) => x !== id);
-      if (prev.length >= MAX_COMPARISON) return prev;
-      return [...prev, id];
-    });
-  };
-
-  const renderCard = (unit: CareUnit) => (
-    <CareUnitCard
-      key={unit.id}
-      unit={unit}
-      selectedFund={selectedFund}
-      isSelected={progress.selectedCareUnit?.id === unit.id}
-      isCompared={comparisonIds.includes(unit.id)}
-      canAddToComparison={comparisonIds.length < MAX_COMPARISON}
-      onOpenDetail={() => setOpenUnitId(unit.id)}
-      onToggleCompare={() => toggleComparison(unit.id)}
-    />
+  const base = useMemo(
+    () =>
+      careUnits.filter((u) => {
+        if (!u.isActive) return false;
+        if (region !== "all" && u.region !== region) return false;
+        if (setting !== "all" && u.setting !== setting) return false;
+        return true;
+      }),
+    [region, setting]
   );
 
+  const { matched, others } = useMemo(() => {
+    if (!usesFundRoute(selection)) return { matched: [] as CareUnit[], others: base };
+    const fund = selection.fund;
+    return {
+      matched: base.filter((u) => routesForFund(u, fund).length > 0),
+      others: base.filter((u) => routesForFund(u, fund).length === 0),
+    };
+  }, [base, selection]);
+
+  const scrollTo = (el: HTMLElement | null) => {
+    if (!el) return;
+    const reduce = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    el.focus({ preventScroll: true });
+  };
+
+  // המחשבון מחשב תמיד לפי המסלול שמוצג כרגע בכרטיס של אותו מקום
+  const calcUnit = calcUnitId ? careUnits.find((u) => u.id === calcUnitId) : undefined;
+  const calcRoute = calcUnit ? displayedRoute(calcUnit, selection) : undefined;
+  const target = calcUnit && calcRoute ? { unit: calcUnit, route: calcRoute } : null;
+
+  const pickForCalculator = (unitId: string, scroll: boolean) => {
+    setCalcUnitId(unitId);
+    if (scroll) requestAnimationFrame(() => scrollTo(calcRef.current));
+  };
+
+  const comparedItems: ComparedItem[] = compare
+    .map(({ unitId, routeId }) => {
+      const unit = careUnits.find((u) => u.id === unitId);
+      const route = unit?.routes.find((r) => r.id === routeId);
+      return unit && route ? { unit, route } : null;
+    })
+    .filter((x): x is ComparedItem => x != null);
+
+  const updateCompare = (next: CompareKey[]) => {
+    setCompare(next);
+    if (next.length < 2) setComparisonOpen(false);
+  };
+
+  const toggleCompare = (unit: CareUnit) => {
+    const route = displayedRoute(unit, selection);
+    if (!route) return;
+    if (compare.some((c) => c.unitId === unit.id)) {
+      updateCompare(compare.filter((c) => c.unitId !== unit.id));
+    } else if (compare.length < MAX_COMPARISON) {
+      updateCompare([...compare, { unitId: unit.id, routeId: route.id }]);
+    }
+  };
+
+  const openComparison = () => {
+    setComparisonOpen(true);
+    requestAnimationFrame(() => scrollTo(comparisonHeadingRef.current));
+  };
+
+  const renderCard = (unit: CareUnit) => {
+    const route = displayedRoute(unit, selection);
+    if (!route) return null;
+    return (
+      <CareUnitCard
+        key={unit.id}
+        unit={unit}
+        route={route}
+        medicalMode={medicalMode}
+        isCompared={compare.some((c) => c.unitId === unit.id)}
+        compareFull={compare.length >= MAX_COMPARISON}
+        isInCalculator={calcUnitId === unit.id}
+        isSelected={progress.selectedCareUnit?.id === unit.id}
+        onToggleCompare={() => toggleCompare(unit)}
+        onCalculate={() => pickForCalculator(unit.id, true)}
+        onSelect={() => {
+          progress.selectCareUnit(unit.id, unit.name);
+          if (!medicalMode) pickForCalculator(unit.id, false);
+        }}
+        onClearSelection={progress.clearCareUnitSelection}
+      />
+    );
+  };
+
+  const resultsTitle = fundMode
+    ? `מקומות עם מסלול ${FUND_PLANS[selection.fund!]}`
+    : selection.path === "selfPay"
+      ? "מקומות בתשלום עצמי"
+      : medicalMode
+        ? "המקומות — לידיעתך"
+        : "כל המקומות";
+
   return (
-    <div>
-      <div className="space-y-5">
-        <HealthFundStep value={fund} onChange={setFund} />
-        <RegionStep value={region} onChange={setRegion} />
-      </div>
+    <div className="space-y-5 sm:space-y-6">
+      <BeforeChoosingCard />
 
-      <div className="mt-6">
-        <h3 className="text-sm font-bold text-ink">האפשרויות הרלוונטיות לך</h3>
-        <p className="mt-0.5 text-xs leading-relaxed text-ink/45">
-          ריכזנו את המקומות והמסלולים הרלוונטיים לפי הקופה והאזור שבחרת.
-        </p>
+      <RouteCalculator
+        ref={calcRef}
+        selection={selection}
+        onSelectionChange={setSelection}
+        region={region}
+        onRegionChange={setRegion}
+        cycles={cycles}
+        onCyclesChange={setCycles}
+        doctorWanted={doctorWanted}
+        onDoctorWantedChange={setDoctorWanted}
+        doctorAmount={doctorAmount}
+        onDoctorAmountChange={setDoctorAmount}
+        target={target}
+        units={fundMode ? [...matched, ...others] : base}
+        onPickUnit={(id) => pickForCalculator(id, false)}
+      />
 
-        <div className="mt-3 flex flex-wrap items-center gap-2.5">
-          <span className="inline-flex items-center gap-1 text-xs font-semibold text-ink/45">
-            <ListFilter className="h-3.5 w-3.5" strokeWidth={2.5} />
-            מסגרת:
+      <section aria-labelledby="places-title">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h2 id="places-title" className="text-base font-bold text-ink sm:text-lg">
+              {resultsTitle}
+            </h2>
+            <p className="mt-0.5 text-xs text-ink/55">
+              {fundMode ? matched.length : base.length} מקומות{region !== "all" ? ` באזור ${region}` : ""}.
+              מסלול עם ✓ נבדק מול מקור רשמי; ״בבירור״ — עוד לא אומת.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSummaryOpen(true)}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-700 underline-offset-4 hover:underline"
+          >
+            <TableProperties className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+            כל המקומות והמחירים בטבלה
+          </button>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1 text-xs font-semibold text-ink/50">
+            <ListFilter className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+            סוג יחידה:
           </span>
           {SETTING_OPTIONS.map((opt) => (
             <button
               key={opt.value}
               type="button"
+              aria-pressed={setting === opt.value}
               onClick={() => setSetting(opt.value)}
-              className={`min-h-[32px] rounded-full px-3 text-xs font-semibold transition-colors duration-200 ${
+              className={`min-h-[32px] rounded-full px-3 text-xs font-semibold transition-colors ${
                 setting === opt.value ? "bg-teal-600 text-ink shadow-sm" : "bg-mist-100 text-ink/60 hover:bg-mist-200"
               }`}
             >
               {opt.label}
             </button>
           ))}
-          <button
-            type="button"
-            onClick={() => setSummaryOpen(true)}
-            className="mr-auto inline-flex items-center gap-1.5 text-xs font-semibold text-teal-700 underline-offset-4 hover:underline"
-          >
-            <TableProperties className="h-3.5 w-3.5" strokeWidth={2.5} />
-            לראות את כל המקומות והמחירים ←
-          </button>
         </div>
 
-        {orderedResults.length === 0 ? (
-          <div className="mt-4 rounded-2xl border-2 border-dashed border-mist-200 p-6 text-center text-sm text-ink/50">
-            אין כרגע יחידות שמתאימות לסינון הזה. אפשר להרחיב את הסינון (למשל לבחור &quot;לא משנה לי&quot;).
+        {base.length === 0 ? (
+          <div className="mt-4 rounded-2xl border-2 border-dashed border-mist-200 p-6 text-center text-sm text-ink/55">
+            אין מקומות שמתאימים לסינון הזה. אפשר לבחור ״כל הארץ״ או סוג יחידה אחר.
           </div>
-        ) : selectedFund ? (
+        ) : fundMode ? (
           <div className="mt-4 space-y-6">
             {matched.length > 0 ? (
-              <div>
-                <h4 className="text-xs font-bold text-teal-700">מתאים לקופה שלך</h4>
-                <div className="mt-2 grid gap-3 sm:grid-cols-2">{matched.map(renderCard)}</div>
-              </div>
+              <div className="grid gap-3 sm:grid-cols-2">{matched.map(renderCard)}</div>
             ) : (
-              <div className="rounded-2xl border-2 border-warm-200 bg-warm-50/60 p-4 text-sm leading-relaxed text-ink/70">
-                עדיין לא מצאנו הסדר מאומת של {selectedFund} עם בית חולים ספציפי באזור הזה — מומלץ לבדוק ישירות מול
-                הקופה אם קיים מסלול כזה. בינתיים, הנה אפשרויות בתשלום עצמי באזור שבחרת.
-              </div>
+              <p className="rounded-2xl border-2 border-mist-200 bg-mist-50 p-4 text-sm leading-relaxed text-ink/70">
+                לא מצאנו באזור הזה יחידה שמופיעה במקור רשמי כחלק מ{FUND_PLANS[selection.fund!]}. כדאי לבדוק מול{" "}
+                {selection.fund} אם יש יחידה נוספת בהסדר. בינתיים, הנה המקומות באזור בתשלום עצמי.
+              </p>
             )}
             {others.length > 0 && (
               <div>
-                <h4 className="text-xs font-bold text-ink/50">אפשרויות נוספות באזור</h4>
+                <h3 className="text-sm font-bold text-ink/60">מקומות נוספים באזור — בתשלום עצמי</h3>
+                <p className="mt-0.5 text-xs text-ink/50">
+                  לא מצאנו מקור שמקשר אותם ל{FUND_PLANS[selection.fund!]}. זה לא אומר שאין הסדר, אבל כדאי לברר.
+                </p>
                 <div className="mt-2 grid gap-3 sm:grid-cols-2">{others.map(renderCard)}</div>
               </div>
             )}
           </div>
         ) : (
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">{orderedResults.map(renderCard)}</div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">{base.map(renderCard)}</div>
         )}
-      </div>
+      </section>
 
-      <CareUnitDetail
-        unit={openUnit}
-        selectedFund={selectedFund}
-        isSelected={openUnit != null && progress.selectedCareUnit?.id === openUnit.id}
-        onClose={() => setOpenUnitId(null)}
-        onSelect={() => openUnit && progress.selectCareUnit(openUnit.id, openUnit.name)}
-        onClearSelection={progress.clearCareUnitSelection}
+      {comparisonOpen && comparedItems.length >= 2 && (
+        <ComparisonResults
+          ref={comparisonHeadingRef}
+          items={comparedItems}
+          onRemove={(routeId) => updateCompare(compare.filter((c) => c.routeId !== routeId))}
+          onClose={() => setComparisonOpen(false)}
+        />
+      )}
+
+      {/* ריווח כדי שהפס הדביק לא יסתיר את התוכן האחרון */}
+      {compare.length > 0 && <div className="h-20" aria-hidden="true" />}
+
+      <ComparisonBar
+        count={compare.length}
+        max={MAX_COMPARISON}
+        onCompare={openComparison}
+        onClear={() => updateCompare([])}
       />
 
-      <ComparisonBar count={comparisonIds.length} onCompare={() => setComparisonOpen(true)} />
-      <ComparisonTable
-        units={comparisonOpen ? comparisonUnits : []}
-        selectedFund={selectedFund}
-        onClose={() => setComparisonOpen(false)}
-        onRemove={(id) => setComparisonIds((prev) => prev.filter((x) => x !== id))}
-      />
-
-      <SummaryTableModal open={summaryOpen} units={orderedResults} onClose={() => setSummaryOpen(false)} />
+      <SummaryTableModal open={summaryOpen} units={base} onClose={() => setSummaryOpen(false)} />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import OptionCard from "../OptionCard";
-import { hospitalPrices } from "@/data/hospitalPrices";
+import { careUnits } from "@/data/careUnits";
 import type { StepProps } from "./StepProps";
 
 const MODE_OPTIONS = [
@@ -11,8 +11,8 @@ const MODE_OPTIONS = [
 ] as const;
 
 /**
- * שימוש בשמות המרפאות/בתי החולים הקיימים ב-hospitalPrices.ts בלבד (ללא
- * שינוי לקובץ) — המחיר בפועל תמיד מגיע מ-cost_items (ראו costEstimatorModel),
+ * רשימת המקומות מגיעה מ-careUnits.ts — אותו מקור אמת של "איפה כדאי לעשות?"
+ * (כדי שלא תהיה רשימת מקומות מתחרה) — המחיר בפועל תמיד מגיע מ-cost_items (ראו costEstimatorModel),
  * לעולם לא מהמחרוזת החופשית שם.
  */
 export default function Step5ClinicCost({ answers, updateAnswer }: StepProps) {
@@ -39,11 +39,13 @@ export default function Step5ClinicCost({ answers, updateAnswer }: StepProps) {
             className="w-full rounded-lg border border-mist-200 bg-white px-3 py-2 text-sm text-ink/80 transition-colors focus:border-teal-400"
           >
             <option value="">בחרי מהרשימה...</option>
-            {hospitalPrices.map((h) => (
-              <option key={h.name} value={h.name}>
-                {h.name}
-              </option>
-            ))}
+            {careUnits
+              .filter((u) => u.isActive)
+              .map((u) => (
+                <option key={u.id} value={u.name}>
+                  {u.name}
+                </option>
+              ))}
           </select>
         </div>
       )}

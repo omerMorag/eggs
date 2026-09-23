@@ -62,10 +62,14 @@ export const hospitalPrices: HospitalPriceRow[] = [
   {
     name: "שערי צדק",
     region: "ירושלים",
-    cycle1Price: "6,500 ₪",
-    cycle2Price: "12,000 ₪ לשניים; פורסמו גם חבילות ל־3–4 סבבים",
-    needsVerify: "מחיר עדכני ותנאי החזר",
-    verification: "needs-verification",
+    cycle1Price: "8,000 ₪ למחזור טיפול",
+    cycle2Price: "345 ₪ דמי פתיחת תיק (מתקזזים); מחירי חבילות לא אותרו",
+    whatsIncluded: "גירוי, מעקב, שאיבה והקפאה; 5 שנות אחסון ראשונות",
+    verification: "verified",
+    source: {
+      label: "שערי צדק — שימור ביציות מבחירה",
+      url: "https://www.szmc.org.il/departments/obstetrics-and-gynecology/ivf/madrich-ivf/shimur-mbhira/",
+    },
   },
   {
     name: "המרכז הרפואי לגליל – נהריה",
@@ -124,8 +128,8 @@ export const hospitalPrices: HospitalPriceRow[] = [
   {
     name: "קפלן",
     region: "מרכז",
-    cycle1Price: "כ־6,200 ₪",
-    needsVerify: "מחיר עדכני ומה כלול",
+    cycle1Price: "מחיר בבירור (ב-2022: 6,214–6,338 ₪)",
+    needsVerify: "מחירון נוכחי ומה כלול",
     verification: "needs-verification",
     fundArrangements: ["כללית"],
   },
@@ -196,7 +200,7 @@ export const hospitalPrices: HospitalPriceRow[] = [
     },
   },
   {
-    name: "בית החולים האנגלי / הצרפתי / המשפחה הקדושה (נצרת)",
+    name: "בית החולים האנגלי (נצרת)",
     region: "צפון",
     cycle1Price: "לא אותר מחיר תשלום עצמי מפורסם",
     needsVerify: "מחיר, מה כלול ופרטי ההליך בפועל",
