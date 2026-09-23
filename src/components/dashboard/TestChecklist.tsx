@@ -8,8 +8,12 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
+  ClipboardList,
   HelpCircle,
   NotebookPen,
+  Package,
+  Plus,
+  X,
 } from "lucide-react";
 import { testItems } from "@/data/tests";
 import type { TestItem } from "@/data/types";
@@ -20,34 +24,38 @@ interface TestChecklistProps {
   /** מפתחות "testId:subIndex" — אילו רכיבים במיני-הצ'קליסט של כל בדיקה כבר סומנו */
   completedTestSubItems: Set<string>;
   onToggleSubItem: (testId: number, subIndex: number) => void;
-  /** מפתח: testId, ערך: תאריך ביצוע (YYYY-MM-DD) שהוזן ידנית לכל בדיקה */
-  testDates: Record<number, string>;
-  onUpdateDate: (testId: number, date: string) => void;
+  /** מפתח: `testId` (תאריך משותף לקבוצה) או `testId:subIndex` (תאריך נפרד
+   *  לרכיב ספציפי) — ערך: תאריך ביצוע (YYYY-MM-DD) שהוזן ידנית */
+  testDates: Record<string, string>;
+  onUpdateDate: (key: string, date: string) => void;
 }
 
-type ValidityTone = "valid" | "expired" | "unknown" | "empty";
+type RecordedTone = "recorded" | "empty" | "valid" | "expired";
 
-interface ValidityStatus {
+interface RecordedStatus {
   label: string;
-  tone: ValidityTone;
+  tone: RecordedTone;
 }
 
 /**
- * מחשבת האם בדיקה עדיין בתוקף לפי תאריך הביצוע שהוזן ותוקף הבדיקה הידוע
- * (test.validityDays — נתון קבוע של האתר, לא הזנה של המשתמשת). כשאין תאריך
- * או כשאין ערך תוקף אחיד לבדיקה (למשל כי הוא משתנה בין יחידות), מוצג מצב
- * ניטרלי במקום לנחש.
+ * מחשבת מה להציג ליד תאריך הביצוע. ברירת המחדל — ואצל כל תשע הקבוצות נכון
+ * לעכשיו, ר' tests.ts — היא הצגה נטולת-ניחוש: יש תאריך -> הערה עדינה לבדוק
+ * מול היחידה אם צריך לחדש (לא קביעת "בתוקף/פג תוקף" מטעה שמבוססת על כלל
+ * גורף); אין תאריך -> הזמנה עדינה להזין למעקב אישי בלבד, בלי לרמוז שהזנה
+ * "תגלה" את התוקף. test.validityDays נשאר מנגנון זמין לעתיד, למקרה שתתווסף
+ * דרישת תוקף שאומתה בפועל מול יחידה ספציפית — אף קבוצה לא משתמשת בו כרגע.
  */
-function getValidityStatus(test: TestItem, dateStr: string | undefined): ValidityStatus {
+function getRecordedStatus(test: TestItem, dateStr: string | undefined): RecordedStatus {
   if (!dateStr) {
-    return { label: "הזיני תאריך ביצוע כדי לראות אם בתוקף", tone: "empty" };
-  }
-  if (!test.validityDays) {
-    return { label: "התוקף משתנה בין יחידות — יש לוודא מול היחידה שבחרת", tone: "unknown" };
+    return { label: "הזיני תאריך ביצוע למעקב אישי", tone: "empty" };
   }
   const performedDate = new Date(dateStr);
   if (Number.isNaN(performedDate.getTime())) {
     return { label: "תאריך לא תקין", tone: "empty" };
+  }
+  if (!test.validityDays) {
+    const formattedDate = performedDate.toLocaleDateString("he-IL");
+    return { label: `בוצע ב-${formattedDate}. בדקי מול היחידה אם צריך לחדש.`, tone: "recorded" };
   }
   const expiryDate = new Date(performedDate);
   expiryDate.setDate(expiryDate.getDate() + test.validityDays);
@@ -60,17 +68,17 @@ function getValidityStatus(test: TestItem, dateStr: string | undefined): Validit
   return { label: `פג תוקף (מ-${formattedExpiry})`, tone: "expired" };
 }
 
-const VALIDITY_STYLES: Record<ValidityTone, string> = {
+const STATUS_STYLES: Record<RecordedTone, string> = {
   valid: "bg-teal-50 text-teal-700 ring-teal-200/60",
   expired: "bg-red-50 text-red-700 ring-red-200/60",
-  unknown: "bg-warm-100 text-deep ring-warm-300/60",
+  recorded: "bg-mist-50 text-ink/60 ring-mist-200/60",
   empty: "bg-mist-50 text-ink/45 ring-mist-200/60",
 };
 
-const VALIDITY_ICONS: Record<ValidityTone, typeof CheckCircle2> = {
+const STATUS_ICONS: Record<RecordedTone, typeof CheckCircle2> = {
   valid: CheckCircle2,
   expired: AlertTriangle,
-  unknown: HelpCircle,
+  recorded: HelpCircle,
   empty: Calendar,
 };
 
@@ -78,13 +86,21 @@ const VALIDITY_ICONS: Record<ValidityTone, typeof CheckCircle2> = {
  * צ'קליסט הבדיקות. כל בדיקה מוצגת ככרטיס Accordion בפני עצמו: במצב סגור
  * רואים כותרת + סטטוס (הושלם / לא הושלם) + מיני-צ'קליסט של הרכיבים בתוך
  * הבדיקה עצמה (למשל AMH בתוך "פרופיל הורמונלי") שניתן לסמן אחד-אחד; בפתיחה
- * מתגלה גם טקסט ההנחיה המלא (detail — תזמון/תוקף וכו') בלי שינוי. הבדיקה
- * כולה מסומנת כ"הושלמה" אוטומטית רק כשכל הרכיבים שלה מסומנים — הסימון
- * ה"ראשי" בראש הכרטיס נשאר קיים כקיצור דרך שמסמן/מבטל את כל הרכיבים יחד.
+ * מתגלה גם טקסט ההנחיה המלא (detail) בלי שינוי. הבדיקה כולה מסומנת
+ * כ"הושלמה" אוטומטית רק כשכל הרכיבים שלה מסומנים — הסימון ה"ראשי" בראש
+ * הכרטיס נשאר קיים כקיצור דרך שמסמן/מבטל את כל הרכיבים יחד.
  *
- * הטבלה הקטנה שבתוך כל כרטיס: "תאריך ביצוע" הוא השדה היחיד שהמשתמשת מזינה;
- * "הנחיות מיוחדות" הוא תוכן קבוע של האתר (test.prepNote). משילוב השניים
- * מחושב אוטומטית סטטוס "בתוקף / פג תוקף" (getValidityStatus).
+ * "תאריך ביצוע" הוא שדה משותף לכל הקבוצה כברירת מחדל (כמו קודם), אבל כשיש
+ * יותר מרכיב אחד בקבוצה אפשר גם לתת תאריך נפרד לרכיב ספציפי (למשל AMH ביום
+ * אחר מ-FSH/אסטרדיול) — ר' renderSubItems: לחיצה על "תאריך נפרד" ליד רכיב
+ * פותחת שדה תאריך קומפקטי רק בשבילו, כדי לא להציג את כל שדות התאריך
+ * הנפרדים בבת אחת כברירת מחדל. רכיב שכבר יש לו תאריך נפרד שמור מוצג פתוח
+ * מיד (כדי לא "להסתיר" נתון קיים מאחורי לחיצה).
+ *
+ * "הנחיות מיוחדות" / "מה לבדוק מול היחידה" / "מה להביא" מוצגים כל אחד רק
+ * כשיש בו תוכן ממשי (test.prepNote / test.unitCheckNote / test.whatToBring)
+ * — קבוצה בלי הכנה מיוחדת לא מציגה שדה ריק. "בתוקף/פג תוקף" הוחלף בהערה
+ * נטולת-ניחוש (getRecordedStatus) שלא קובעת תוקף מבלי שהוא אומת בפועל.
  */
 export default function TestChecklist({
   completedTests,
@@ -95,9 +111,21 @@ export default function TestChecklist({
   onUpdateDate,
 }: TestChecklistProps) {
   const [openTestId, setOpenTestId] = useState<number | null>(null);
+  // מפתחות "testId:subIndex" ששדה התאריך הנפרד שלהם נפתח ידנית (בלי שיש
+  // עדיין ערך שמור) — נשמר כאן, לא ב-progress, כי זה מצב UI זמני גרידא
+  const [expandedDateKeys, setExpandedDateKeys] = useState<Set<string>>(new Set());
 
   const toggleOpen = (id: number) => {
     setOpenTestId((prev) => (prev === id ? null : id));
+  };
+
+  const toggleDateExpanded = (key: string) => {
+    setExpandedDateKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   };
 
   return (
@@ -113,6 +141,12 @@ export default function TestChecklist({
           const isOpen = openTestId === test.id;
           const checkboxId = `test-checkbox-${test.id}`;
           const panelId = `test-detail-${test.id}`;
+          const hasMultipleSubItems = (test.subItems?.length ?? 0) > 1;
+          const groupDateKey = String(test.id);
+          const groupDateValue = testDates[groupDateKey] ?? "";
+          const status = getRecordedStatus(test, groupDateValue || undefined);
+          const StatusIcon = STATUS_ICONS[status.tone];
+
           return (
             <li
               key={test.id}
@@ -185,86 +219,140 @@ export default function TestChecklist({
               </div>
 
               {test.subItems && test.subItems.length > 0 && (
-                <ul className="flex flex-col gap-1.5 border-t border-mist-100 px-4 py-3 sm:px-5">
-                  {test.subItems.map((label, index) => {
+                <ul className="flex flex-col gap-2 border-t border-mist-100 px-4 py-3 sm:px-5">
+                  {test.subItems.map((item, index) => {
                     const subKey = `${test.id}:${index}`;
                     const isSubDone = completedTestSubItems.has(subKey);
                     const subCheckboxId = `test-subitem-${test.id}-${index}`;
+                    const subDateValue = testDates[subKey] ?? "";
+                    const isDateExpanded = expandedDateKeys.has(subKey) || Boolean(subDateValue);
                     return (
-                      <li key={subKey} className="flex items-center gap-2.5">
-                        <input
-                          id={subCheckboxId}
-                          type="checkbox"
-                          checked={isSubDone}
-                          onChange={() => onToggleSubItem(test.id, index)}
-                          className="h-4 w-4 shrink-0 cursor-pointer accent-teal-600"
-                        />
-                        <label
-                          htmlFor={subCheckboxId}
-                          className={`cursor-pointer text-xs sm:text-sm ${
-                            isSubDone ? "text-ink/40 line-through" : "text-ink/75"
-                          }`}
-                        >
-                          {label}
-                        </label>
+                      <li key={subKey} className="flex flex-col gap-1">
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          <input
+                            id={subCheckboxId}
+                            type="checkbox"
+                            checked={isSubDone}
+                            onChange={() => onToggleSubItem(test.id, index)}
+                            className="h-4 w-4 shrink-0 cursor-pointer accent-teal-600"
+                          />
+                          <label
+                            htmlFor={subCheckboxId}
+                            className={`cursor-pointer text-xs sm:text-sm ${
+                              isSubDone ? "text-ink/40 line-through" : "text-ink/75"
+                            }`}
+                          >
+                            {item.label}
+                          </label>
+                          {hasMultipleSubItems && !isDateExpanded && (
+                            <button
+                              type="button"
+                              onClick={() => toggleDateExpanded(subKey)}
+                              className="inline-flex items-center gap-1 text-[11px] font-medium text-teal-700/80 transition-colors hover:text-teal-800 sm:text-xs"
+                            >
+                              <Plus className="h-3 w-3" strokeWidth={2.5} />
+                              תאריך נפרד
+                            </button>
+                          )}
+                        </div>
+
+                        {item.note && (
+                          <p className="pr-6 text-[11px] leading-snug text-ink/50 sm:text-xs">{item.note}</p>
+                        )}
+
+                        {hasMultipleSubItems && isDateExpanded && (
+                          <div className="flex items-center gap-1.5 pr-6">
+                            <input
+                              type="date"
+                              value={subDateValue}
+                              onChange={(e) => onUpdateDate(subKey, e.target.value)}
+                              aria-label={`תאריך ביצוע נפרד — ${item.label}`}
+                              className="rounded-lg border border-mist-200 bg-white px-2 py-1 text-[11px] text-ink/80 transition-colors focus:border-teal-400 sm:text-xs"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onUpdateDate(subKey, "");
+                                setExpandedDateKeys((prev) => {
+                                  const next = new Set(prev);
+                                  next.delete(subKey);
+                                  return next;
+                                });
+                              }}
+                              aria-label={`הסרת תאריך נפרד — ${item.label}`}
+                              className="text-ink/35 transition-colors hover:text-ink/60"
+                            >
+                              <X className="h-3.5 w-3.5" strokeWidth={2.25} />
+                            </button>
+                          </div>
+                        )}
                       </li>
                     );
                   })}
                 </ul>
               )}
 
-              {(() => {
-                const dateValue = testDates[test.id] ?? "";
-                const status = getValidityStatus(test, dateValue || undefined);
-                const StatusIcon = VALIDITY_ICONS[status.tone];
-                return (
-                  <div className="border-t border-mist-100 px-4 py-3 sm:px-5">
-                    <table className="w-full border-separate border-spacing-0 overflow-hidden rounded-xl border border-mist-100">
-                      <thead>
-                        <tr>
-                          <th className="w-1/2 border-b border-l border-mist-100 bg-mist-50/60 px-3 py-1.5 text-right text-[11px] font-bold text-ink/55 sm:text-xs">
-                            <span className="inline-flex items-center gap-1.5">
-                              <Calendar className="h-3.5 w-3.5" strokeWidth={2} />
-                              תאריך ביצוע
-                            </span>
-                          </th>
-                          <th className="w-1/2 border-b border-mist-100 bg-mist-50/60 px-3 py-1.5 text-right text-[11px] font-bold text-ink/55 sm:text-xs">
-                            <span className="inline-flex items-center gap-1.5">
-                              <NotebookPen className="h-3.5 w-3.5" strokeWidth={2} />
-                              הנחיות מיוחדות
-                            </span>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td className="border-l border-mist-100 p-2 align-top">
-                            <input
-                              type="date"
-                              value={dateValue}
-                              onChange={(e) => onUpdateDate(test.id, e.target.value)}
-                              aria-label={`תאריך ביצוע — ${test.title}`}
-                              className="w-full rounded-lg border border-mist-200 bg-white px-2 py-1.5 text-xs text-ink/80 transition-colors focus:border-teal-400 sm:text-sm"
-                            />
-                          </td>
-                          <td className="p-2 align-top">
-                            <p className="px-1 py-1.5 text-xs leading-snug text-ink/65 sm:text-sm">
-                              {test.prepNote ?? "אין הנחיה מיוחדת"}
-                            </p>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-
-                    <p
-                      className={`mt-2 flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold ring-1 ring-inset sm:text-xs ${VALIDITY_STYLES[status.tone]}`}
-                    >
-                      <StatusIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} />
-                      {status.label}
+              <div className="flex flex-col gap-3 border-t border-mist-100 px-4 py-3 sm:px-5">
+                <div>
+                  <label
+                    htmlFor={`test-date-${test.id}`}
+                    className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold text-ink/55 sm:text-xs"
+                  >
+                    <Calendar className="h-3.5 w-3.5" strokeWidth={2} />
+                    תאריך ביצוע
+                  </label>
+                  <input
+                    id={`test-date-${test.id}`}
+                    type="date"
+                    value={groupDateValue}
+                    onChange={(e) => onUpdateDate(groupDateKey, e.target.value)}
+                    aria-label={`תאריך ביצוע — ${test.title}`}
+                    className="w-full max-w-[220px] rounded-lg border border-mist-200 bg-white px-2 py-1.5 text-xs text-ink/80 transition-colors focus:border-teal-400 sm:text-sm"
+                  />
+                  {hasMultipleSubItems && (
+                    <p className="mt-1 text-[11px] leading-snug text-ink/45 sm:text-xs">
+                      בוצעו חלק מהבדיקות ביום אחר? אפשר לסמן &quot;תאריך נפרד&quot; ליד כל רכיב למעלה.
                     </p>
+                  )}
+                </div>
+
+                {test.prepNote && (
+                  <div className="rounded-xl bg-mist-50/70 p-2.5">
+                    <p className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-ink/55 sm:text-xs">
+                      <NotebookPen className="h-3.5 w-3.5" strokeWidth={2} />
+                      הנחיות מיוחדות
+                    </p>
+                    <p className="text-xs leading-relaxed text-ink/65 sm:text-sm">{test.prepNote}</p>
                   </div>
-                );
-              })()}
+                )}
+
+                {test.unitCheckNote && (
+                  <div className="rounded-xl bg-mist-50/70 p-2.5">
+                    <p className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-ink/55 sm:text-xs">
+                      <ClipboardList className="h-3.5 w-3.5" strokeWidth={2} />
+                      מה לבדוק מול היחידה
+                    </p>
+                    <p className="text-xs leading-relaxed text-ink/65 sm:text-sm">{test.unitCheckNote}</p>
+                  </div>
+                )}
+
+                {test.whatToBring && (
+                  <div className="rounded-xl bg-mist-50/70 p-2.5">
+                    <p className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-ink/55 sm:text-xs">
+                      <Package className="h-3.5 w-3.5" strokeWidth={2} />
+                      מה להביא
+                    </p>
+                    <p className="text-xs leading-relaxed text-ink/65 sm:text-sm">{test.whatToBring}</p>
+                  </div>
+                )}
+
+                <p
+                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold ring-1 ring-inset sm:text-xs ${STATUS_STYLES[status.tone]}`}
+                >
+                  <StatusIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} />
+                  {status.label}
+                </p>
+              </div>
             </li>
           );
         })}

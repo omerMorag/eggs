@@ -17,8 +17,12 @@ export interface StoredProgress {
   tests: number[];
   /** מפתחות בפורמט "testId:subIndex" — כל רכיב במיני-הצ'קליסט של כל בדיקה */
   testSubItems: string[];
-  /** מפתח: testId, ערך: תאריך ביצוע (YYYY-MM-DD) שהוזן ידנית לכל בדיקה */
-  testDates: Record<number, string>;
+  /** מפתח: `testId` (תאריך משותף לכל הקבוצה) או `testId:subIndex` (תאריך נפרד
+   *  לרכיב ספציפי בתוך הקבוצה, למשל AMH בנפרד מ-FSH/אסטרדיול) — ערך: תאריך
+   *  ביצוע (YYYY-MM-DD) שהוזן ידנית. הרחבה תואמת-לאחור בלבד של אותו מבנה
+   *  מפתחות שהיה קיים תמיד בפועל (מפתחות עצם JS הם תמיד מחרוזות) — נתונים
+   *  ישנים עם מפתחות "1", "2" וכו' ממשיכים להתפרש בדיוק כמו קודם, בלי מיגרציה. */
+  testDates: Record<string, string>;
   /** היחידה שנבחרה בכלי "איפה כדאי לעשות?" (WHERE TO DO 2.0) — null = לא נבחרה/בוטלה בחירה.
    *  שדה חדש (לא שינוי מבנה קיים) — נתונים ישנים ב-localStorage/Redis פשוט לא כוללים אותו,
    *  ו-readStorage למטה מתייחס לחסרונו כ-null, בלי צורך במיגרציה אמיתית. */
@@ -103,13 +107,13 @@ function readStorage(): StoredProgress {
       // תאימות לאחור: גרסה קודמת שמרה כאן { date, instructions } לכל בדיקה
       testNotes?: Record<number, { date?: string }>;
     };
-    const testDates: Record<number, string> = {};
+    const testDates: Record<string, string> = {};
     if (parsed.testDates && typeof parsed.testDates === "object") {
       Object.assign(testDates, parsed.testDates);
     } else if (parsed.testNotes && typeof parsed.testNotes === "object") {
       // מיגרציה מהמבנה הקודם (testNotes.date) לפני שהוסר שדה ההנחיות החופשי
       Object.entries(parsed.testNotes).forEach(([testId, note]) => {
-        if (note?.date) testDates[Number(testId)] = note.date;
+        if (note?.date) testDates[testId] = note.date;
       });
     }
     const selectedCareUnit =
@@ -192,8 +196,8 @@ export function useJourneyProgress() {
   const [completedStepTasks, setCompletedStepTasks] = useState<Set<string>>(new Set());
   // מפתח כל איבר: `${testId}:${subIndex}` — מקור האמת היחיד להתקדמות בבדיקות
   const [completedTestSubItems, setCompletedTestSubItems] = useState<Set<string>>(new Set());
-  // מפתח: testId, ערך: תאריך ביצוע שהוזן ידנית לכל בדיקה
-  const [testDates, setTestDates] = useState<Record<number, string>>({});
+  // מפתח: testId (משותף) או testId:subIndex (נפרד לרכיב) — ר' StoredProgress.testDates
+  const [testDates, setTestDates] = useState<Record<string, string>>({});
   // היחידה שנבחרה בכלי "איפה כדאי לעשות?" — ראו StoredProgress.selectedCareUnit
   const [selectedCareUnit, setSelectedCareUnit] = useState<{ id: string; name: string } | null>(null);
   // ראו StoredProgress.hasSeenIntro — ברירת המחדל false נכונה גם לפני
@@ -328,9 +332,9 @@ export function useJourneyProgress() {
       const mergedSubItems = new Set(completedTestSubItems);
       (serverData.testSubItems ?? []).forEach((key) => mergedSubItems.add(key));
 
-      const mergedDates: Record<number, string> = { ...testDates };
-      Object.entries(serverData.testDates ?? {}).forEach(([testId, date]) => {
-        if (date) mergedDates[Number(testId)] = date;
+      const mergedDates: Record<string, string> = { ...testDates };
+      Object.entries(serverData.testDates ?? {}).forEach(([key, date]) => {
+        if (date) mergedDates[key] = date;
       });
 
       // בחירת יחידה: כמו testDates, נתוני השרת גוברים אם קיימים (ערך אחרון-שנבחר), אחרת נשאר המקומי
@@ -457,15 +461,17 @@ export function useJourneyProgress() {
     });
   }, []);
 
-  /** מעדכנת את תאריך הביצוע שהוזן ידנית לבדיקה נתונה (מחרוזת ריקה = ניקוי) */
-  const updateTestDate = useCallback((testId: number, date: string) => {
+  /** מעדכנת את תאריך הביצוע שהוזן ידנית לבדיקה/לרכיב נתון (מחרוזת ריקה = ניקוי).
+   *  key הוא `testId` (תאריך משותף לקבוצה) או `testId:subIndex` (תאריך נפרד
+   *  לרכיב ספציפי) — ר' StoredProgress.testDates. */
+  const updateTestDate = useCallback((key: string, date: string) => {
     setTestDates((prev) => {
       if (!date) {
         const next = { ...prev };
-        delete next[testId];
+        delete next[key];
         return next;
       }
-      return { ...prev, [testId]: date };
+      return { ...prev, [key]: date };
     });
   }, []);
 
