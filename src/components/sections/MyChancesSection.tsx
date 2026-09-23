@@ -8,7 +8,7 @@ import ProcessDiagram from "@/components/chances/ProcessDiagram";
 import KeyFactsGrid from "@/components/chances/KeyFactsGrid";
 import ChanceSupportCard from "@/components/chances/ChanceSupportCard";
 import ChanceFaq from "@/components/chances/ChanceFaq";
-import { chanceSources } from "@/data/chanceContent";
+import { chanceSourceGroups } from "@/data/chanceContent";
 import HenIllustration from "@/components/hens/HenIllustration";
 
 /**
@@ -84,8 +84,11 @@ export default function MyChancesSection() {
       </section>
 
       {/* 9. מקורות ומתודולוגיה — גלוי תמיד (לא אקורדיון), כדי שכל מי שנכנסת
-          לעמוד תראה בבירור על מה ההערכה מבוססת, בלי צורך ללחוץ על כלום */}
-      <section className="mt-10 sm:mt-14">
+          לעמוד תראה בבירור על מה ההערכה מבוססת, בלי צורך ללחוץ על כלום.
+          id="chance-sources" הוא יעד הגלילה של קישור "איך חושבה ההערכה?"
+          בכרטיס המידע שמעל שדות המחשבון (ר' PreCalculatorInfoCard.tsx —
+          לא hash אמיתי בכוונה, כדי לא להתנגש עם ניתוב האזורים הראשי). */}
+      <section id="chance-sources" className="mt-10 scroll-mt-20 sm:mt-14">
         <div className="rounded-2xl border-2 border-mist-200 bg-mist-50/60 p-5 sm:p-6">
           <h2 className="font-sans text-base font-bold tracking-tight text-ink sm:text-lg">
             על מה מבוססת ההערכה?
@@ -96,23 +99,35 @@ export default function MyChancesSection() {
             ללידת חי.
           </p>
           <p className="mt-2.5 text-sm leading-relaxed text-ink/70 sm:text-[15px]">
-            שיעורי ההצלחה עשויים להשתנות בין נשים, מרפאות, בתי חולים ומעבדות.
+            שיעורי ההצלחה עשויים להשתנות בין נשים, מרפאות, בתי חולים ומעבדות. המקורות למטה
+            מקובצים לפי התפקיד שלהם — כדי שיהיה ברור מה בדיוק כל מחקר תורם, ומה הוא לא.
           </p>
-          <p className="mt-4 text-xs font-semibold text-ink/50">מקורות:</p>
-          <ul className="mt-1.5 space-y-1 text-xs leading-relaxed text-ink/50">
-            {chanceSources.map((source) => (
-              <li key={source.url}>
-                <a
-                  href={source.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline decoration-dotted underline-offset-2 hover:text-teal-700"
-                >
-                  {source.label}
-                </a>
-              </li>
+
+          <div className="mt-5 flex flex-col gap-5">
+            {chanceSourceGroups.map((group) => (
+              <div key={group.title}>
+                <p className="text-xs font-bold uppercase tracking-wide text-ink/45">{group.title}</p>
+                <ul className="mt-2 flex flex-col gap-2.5">
+                  {group.sources.map((source) => (
+                    <li
+                      key={source.url}
+                      className="rounded-xl border border-mist-200 bg-white/70 p-3 text-xs leading-relaxed text-ink/70 sm:text-[13px]"
+                    >
+                      <a
+                        href={source.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-semibold text-ink underline decoration-dotted underline-offset-2 hover:text-teal-700"
+                      >
+                        {source.label}, {source.year}
+                      </a>
+                      <p className="mt-1 text-ink/60">{source.description}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       </section>
 

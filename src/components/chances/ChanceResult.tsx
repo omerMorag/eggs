@@ -1,5 +1,5 @@
 import { formatChancePercent, probabilityAtLeastK } from "@/data/chanceModel";
-import { resultTiers, type FamilyGoalOption } from "@/data/chanceContent";
+import { goldmanModelLabel, resultDisclaimerText, resultTiers, type FamilyGoalOption } from "@/data/chanceContent";
 
 interface ChanceResultProps {
   age: number;
@@ -54,13 +54,14 @@ export default function ChanceResult({ age, eggs, familyGoal }: ChanceResultProp
           </div>
         </div>
         <p className="mt-3 text-center text-sm font-semibold text-ink/70">{familyGoal.resultLabel}</p>
-        <p className="mt-1.5 text-center text-xs leading-relaxed text-ink/50">
-          זו אינה הבטחה או אבחנה רפואית. התוצאה האישית עשויה להיות שונה.
-        </p>
+        <span className="mt-1.5 inline-flex items-center rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-teal-700 ring-1 ring-inset ring-teal-200">
+          {goldmanModelLabel}
+        </span>
+        <p className="mt-2 text-center text-xs leading-relaxed text-ink/50">{resultDisclaimerText}</p>
       </div>
 
       <p className="mx-auto mt-5 max-w-lg text-center text-sm leading-relaxed text-ink/70 sm:text-[15px]">
-        לפי המודל הסטטיסטי, עבור {eggs} ביציות בשלות שהוקפאו בגיל {age}, {familyGoal.resultLabel.replace("סיכוי משוער", "הסיכוי המשוער")} הוא {percentLabel}.
+        לפי המודל הסטטיסטי, עבור {eggs} ביציות בשלות שהוקפאו בגיל {age}, ה{familyGoal.resultLabel} הוא {percentLabel}.
       </p>
 
       <p className="mx-auto mt-4 max-w-lg text-center text-sm leading-relaxed text-ink/60">

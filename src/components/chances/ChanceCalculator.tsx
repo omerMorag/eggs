@@ -4,9 +4,11 @@ import { useState } from "react";
 import { ChevronDown, RotateCcw } from "lucide-react";
 import ChanceSliderField from "@/components/chances/ChanceSliderField";
 import ChanceResult from "@/components/chances/ChanceResult";
+import ReturnRateAccordion from "@/components/chances/ReturnRateAccordion";
 import ScenarioComparison from "@/components/chances/ScenarioComparison";
 import ChanceChart from "@/components/chances/ChanceChart";
 import LowReserveCard from "@/components/chances/LowReserveCard";
+import PreCalculatorInfoCard from "@/components/chances/PreCalculatorInfoCard";
 import InfoTooltip from "@/components/shared/InfoTooltip";
 import { MIN_AGE, MAX_AGE, MIN_EGGS, MAX_EGGS } from "@/data/chanceModel";
 import { ageInfoText, familyGoalOptions, miiTooltipText } from "@/data/chanceContent";
@@ -45,7 +47,11 @@ export default function ChanceCalculator() {
         הזיני את הנתונים כפי שהם מופיעים בסיכום השאיבה שקיבלת מבית החולים או מהמרפאה.
       </p>
 
-      <div className="mt-6 flex flex-col gap-6">
+      <div className="mt-5">
+        <PreCalculatorInfoCard />
+      </div>
+
+      <div className="mt-1 flex flex-col gap-6">
         <div>
           <ChanceSliderField
             id="chance-age"
@@ -140,6 +146,8 @@ export default function ChanceCalculator() {
       {hasCalculated && (
         <div className="mt-8 border-t border-mist-100 pt-6">
           <ChanceResult age={age} eggs={eggs} familyGoal={familyGoal} />
+
+          <ReturnRateAccordion />
 
           <LowReserveCard />
 

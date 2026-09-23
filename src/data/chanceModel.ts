@@ -37,11 +37,27 @@ function getEuploidProbability(age: number): number {
   return euploidByAge[age] ?? euploidByAge[44];
 }
 
-/** הסיכוי שביצית בשלה בודדת, בגיל נתון, תוביל בסופו של דבר ללידת חי. */
+/** הסיכוי שביצית בשלה בודדת, בגיל נתון, תוביל בסופו של דבר ללידת חי.
+ *
+ *  תיקון-שורש (בדיקת התאמה למאמר גולדמן, ר' MyChancesSection — בדיקת פער
+ *  93%/90%): המאמר עצמו מקבץ באופן מפורש את כל הנשים בגיל ≤35 לקבוצה
+ *  אחת ("all patients ≤35.0 y were categorized together into one group"),
+ *  ונותן דוגמה מפורשת ל-20 ביציות בשלות: "women age 34, 37 or 42 y ...
+ *  would be expected to have a 90, 75 and 37% likelihood [of] at least
+ *  one live birth". לפני התיקון הזה, euploidByAge כבר היה שטוח לכל
+ *  הגילאים ≤35 (0.574, נכון), אבל pBlast המשיך להשתמש בגיל הכרונולוגי
+ *  המדויק בתוך המעריך (Math.exp(2.8043 - 0.1112*age)) — כך שגיל 34 יצא
+ *  שונה מגיל 35, בניגוד לקיבוץ המפורש של המאמר. בפועל זה נתן 93% במקום
+ *  90% לגיל 34 עם 20 ביציות. modelAge כאן מיישם את אותו קיבוץ בשני חלקי
+ *  הנוסחה גם יחד (לא רק באאופלואידיה) — בדיוק כמו במאמר עצמו: כל גיל
+ *  25–35 מחושב כאילו הוא גיל 35. גילאים 36 ומעלה לא מושפעים כלל (modelAge
+ *  שווה לגיל האמיתי). ר' גם בדיקת ההתאמה ל-3 הדוגמאות המפורשות של המאמר
+ *  ב-IllustrativeAgeTable.tsx (34/37/42, 20 ביציות → 90/75/37% בדיוק). */
 export function getSingleEggProbability(age: number): number {
-  const thawSurvival = age < 36 ? 0.95 : 0.85;
-  const pBlast = thawSurvival * Math.exp(2.8043 - 0.1112 * age);
-  const pEuploid = getEuploidProbability(age);
+  const modelAge = Math.max(age, 35);
+  const thawSurvival = modelAge < 36 ? 0.95 : 0.85;
+  const pBlast = thawSurvival * Math.exp(2.8043 - 0.1112 * modelAge);
+  const pEuploid = getEuploidProbability(modelAge);
   return 0.6 * pEuploid * pBlast;
 }
 
@@ -92,11 +108,18 @@ export function eggsNeededForTarget(
   return null;
 }
 
-/** מעגל אחוז להצגה, ותוחם ל-99% כדי לא להציג הבטחה של 100%. */
+/** מעגל אחוז להצגה. תוחם למעלה ("מעל 99%") כדי לא להציג הבטחה מוחלטת של
+ *  100% — הנוסחה אסימפטוטית ולמעשה אף פעם לא מגיעה בפועל ל-1 (ר' ChanceChart.tsx).
+ *  למטה, "פחות מ-1%" מוצג רק כשהערך המחושב באמת חיובי-אך-זעיר (היה נעגל
+ *  ל-"0%" ומטעה כאילו אין שום סיכוי) — לא כשהתוצאה 0 מדויק ואמיתי (למשל
+ *  יעד של 3 לידות עם פחות מ-3 ביציות, שבאמת בלתי אפשרי מתמטית; שם "0%"
+ *  עצמו הוא התיאור הכן). אין יותר "רצפה" מלאכותית שמעגלת כל תוצאה זעירה
+ *  כלפי מעלה ל-1% — זו הייתה מטעה באותה מידה בדיוק כמו הצגת 100%. */
 export function formatChancePercent(probability: number): string {
   const percent = probability * 100;
   if (percent >= 99.5) return "מעל 99%";
-  return `${Math.max(1, Math.round(percent))}%`;
+  if (percent > 0 && percent < 0.5) return "פחות מ-1%";
+  return `${Math.round(percent)}%`;
 }
 
 export function clamp(value: number, min: number, max: number): number {
