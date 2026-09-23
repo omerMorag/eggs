@@ -97,7 +97,7 @@ const STATUS_ICONS: Record<RecordedTone, typeof CheckCircle2> = {
  * הנפרדים בבת אחת כברירת מחדל. רכיב שכבר יש לו תאריך נפרד שמור מוצג פתוח
  * מיד (כדי לא "להסתיר" נתון קיים מאחורי לחיצה).
  *
- * "הנחיות מיוחדות" / "מה לבדוק מול היחידה" / "מה להביא" מוצגים כל אחד רק
+ * "הנחיות מיוחדות" (בתוך הפאנל של "פרטים נוספים") / "מה לבדוק מול היחידה" / "מה להביא" מוצגים כל אחד רק
  * כשיש בו תוכן ממשי (test.prepNote / test.unitCheckNote / test.whatToBring)
  * — קבוצה בלי הכנה מיוחדת לא מציגה שדה ריק. "בתוקף/פג תוקף" הוחלף בהערה
  * נטולת-ניחוש (getRecordedStatus) שלא קובעת תוקף מבלי שהוא אומת בפועל.
@@ -212,9 +212,20 @@ export default function TestChecklist({
                 }`}
               >
                 <div className={`min-h-0 overflow-hidden ${isOpen ? "border-t border-mist-100" : ""}`}>
-                  <p className="px-4 py-4 text-xs leading-relaxed text-ink/60 sm:px-5 sm:text-sm">
+                  <p className="px-4 pt-4 pb-4 text-xs leading-relaxed text-ink/60 sm:px-5 sm:text-sm">
                     {test.detail}
                   </p>
+                  {/* "הנחיות מיוחדות" — חלק מהפאנל הנפתח של "פרטים נוספים",
+                      לא גלוי תמיד בכרטיס (בקשת המשתמשת, 2026-09-23) */}
+                  {test.prepNote && (
+                    <div className="mx-4 mb-4 rounded-xl bg-mist-50/70 p-2.5 sm:mx-5">
+                      <p className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-ink/55 sm:text-xs">
+                        <NotebookPen className="h-3.5 w-3.5" strokeWidth={2} />
+                        הנחיות מיוחדות
+                      </p>
+                      <p className="text-xs leading-relaxed text-ink/65 sm:text-sm">{test.prepNote}</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -315,16 +326,6 @@ export default function TestChecklist({
                     </p>
                   )}
                 </div>
-
-                {test.prepNote && (
-                  <div className="rounded-xl bg-mist-50/70 p-2.5">
-                    <p className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-ink/55 sm:text-xs">
-                      <NotebookPen className="h-3.5 w-3.5" strokeWidth={2} />
-                      הנחיות מיוחדות
-                    </p>
-                    <p className="text-xs leading-relaxed text-ink/65 sm:text-sm">{test.prepNote}</p>
-                  </div>
-                )}
 
                 {test.unitCheckNote && (
                   <div className="rounded-xl bg-mist-50/70 p-2.5">
