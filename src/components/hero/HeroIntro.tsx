@@ -7,14 +7,10 @@ interface HeroIntroProps {
   /** true כש-prefers-reduced-motion פעיל — מבטל את אנימציית הכניסה העדינה
    *  בלבד (התוכן פשוט מופיע ישר, בלי fade/rise). שום שינוי מבני אחר. */
   reducedMotion: boolean;
-  /** נקראת בלחיצה על כפתור ה-CTA — האחריות המלאה על "מה קורה אז" (חשיפת
-   *  ה-Chrome, סימון hasSeenIntro, וגלילה מדויקת לראש המסלול) נמצאת אצל
-   *  AppShell.tsx; הרכיב הזה לא יודע עליה כלום. */
+  /** נקראת בלחיצה על כפתור ה-CTA — גוללת למקטע ההיכרות האישי (לא למסלול!
+   *  ר' AppShell.tsx: scrollToPersonalIntro). הרכיב הזה לא יודע כלום על
+   *  "מה קורה אז" מעבר לזה. */
   onCtaClick: () => void;
-  /** true כשיש למשתמשת התקדמות שמורה (מקומית/מסונכרנת) או שהיא מחוברת
-   *  לגוגל — קובע רק את ניסוח כפתור ה-CTA ("המשיכי במסלול" לעומת
-   *  "התחילי במסלול"). שומ שינוי אחר בעיצוב/במנגנון. */
-  isReturningVisitor: boolean;
 }
 
 /**
@@ -37,8 +33,15 @@ interface HeroIntroProps {
  * עדינה חד-פעמית ב-mount (fade+rise קצר מאוד, ~150ms, הזזה זעירה) — לא
  * קשורה לסקרול בכלל, ולא משאירה את המסך ריק (המצב ההתחלתי הוא רק opacity
  * מעט מוחלש, לא תוכן חסר).
+ *
+ * כפתור ה-CTA תמיד "להיכרות קצרה" (לא משתנה לפי ביקור חוזר) — הוא גולל
+ * למקטע ההיכרות האישי מתחתיו, לא למסלול (ר' AppShell.tsx). כדי שהגלילה
+ * הזאת תרגיש טבעית ולא כמו "עמוד סגור לגמרי", הגובה בדסקטופ (lg ומעלה)
+ * מעט נמוך מ-100% (h-hero-safe, ר' globals.css) כך שקצה מקטע ההיכרות
+ * "מציץ" בתחתית המסך; במובייל הגובה נשאר מלא (בלי דחיסת תוכן) — שם רמז
+ * הגלילה העדין בתחתית המסך ("ממשיכים למטה" + חץ) הוא שמסמן שיש עוד.
  */
-export default function HeroIntro({ reducedMotion, onCtaClick, isReturningVisitor }: HeroIntroProps) {
+export default function HeroIntro({ reducedMotion, onCtaClick }: HeroIntroProps) {
   const [visible, setVisible] = useState(reducedMotion);
 
   useEffect(() => {
@@ -53,7 +56,10 @@ export default function HeroIntro({ reducedMotion, onCtaClick, isReturningVisito
   }, [reducedMotion]);
 
   return (
-    <section aria-label="מקפיאות — מסך פתיחה" className="h-screen-safe flex items-center justify-center px-4 sm:px-6">
+    <section
+      aria-label="מקפיאות — מסך פתיחה"
+      className="h-hero-safe relative flex items-center justify-center px-4 sm:px-6"
+    >
       <div
         className="flex w-full max-w-5xl flex-col-reverse items-center gap-7 transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none sm:gap-8 lg:flex-row lg:items-center lg:justify-center lg:gap-16"
         style={{
@@ -84,7 +90,7 @@ export default function HeroIntro({ reducedMotion, onCtaClick, isReturningVisito
             onClick={onCtaClick}
             className="group mt-1 inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-6 py-2.5 text-sm font-bold text-ink shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:bg-teal-500 hover:shadow-cardHover active:translate-y-0"
           >
-            {isReturningVisitor ? "המשיכי במסלול" : "התחילי במסלול"}
+            להיכרות קצרה
             <ChevronDown
               className="h-4 w-4 transition-transform group-hover:translate-y-0.5"
               strokeWidth={2.5}
@@ -101,6 +107,20 @@ export default function HeroIntro({ reducedMotion, onCtaClick, isReturningVisito
           className="h-auto w-36 max-w-full shrink-0 object-contain sm:w-44 lg:w-[280px]"
           style={{ filter: "drop-shadow(0 16px 28px rgba(36, 22, 25, 0.14))" }}
         />
+      </div>
+
+      {/* רמז גלילה עדין — "יש עוד למטה". קבוע בתחתית המסך (לא חלק מהעמודה
+          הממורכזת מעליו), כדי שיישאר גלוי גם בדסקטופ (שם הגובה כבר מקוצר
+          קצת, ר' h-hero-safe) וגם במובייל (שם זה הרמז החזותי היחיד לכך
+          שאפשר להמשיך לגלול — הגובה שם נשאר מלא ולא נדחס). aria-hidden כי
+          זה רמז חזותי גרידא, לא תוכן/פעולה. */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-4 flex flex-col items-center gap-1 text-ink/40 transition-opacity duration-300 sm:bottom-5 lg:bottom-7"
+        style={{ opacity: visible ? 1 : 0 }}
+        aria-hidden="true"
+      >
+        <span className="text-xs font-medium tracking-wide">ממשיכים למטה</span>
+        <ChevronDown className="h-4 w-4 animate-bounce motion-reduce:animate-none" strokeWidth={2.5} />
       </div>
     </section>
   );

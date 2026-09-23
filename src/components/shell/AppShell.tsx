@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { useSession } from "next-auth/react";
 import { useJourneyProgress } from "@/lib/useJourneyProgress";
 import { useHashSection } from "@/lib/useHashSection";
 import { useHeroScrollTransition } from "@/lib/useHeroScrollTransition";
@@ -45,12 +44,18 @@ const AdminStoriesSection = dynamic(() => import("@/components/sections/AdminSto
  * ~200ms) במקום להופיע בבת אחת — כדי שהמעבר ממקטע ההיכרות האישי לתחילת
  * המסלול (שבו ה-Chrome נחשף) ירגיש ברור ורציף, לא כ"קפיצה" פתאומית.
  *
- * roadmapTopRef משמש שני תפקידים: (1) יעד גלילה מדויק לשני כפתורי ה-CTA
- * ("התחילי/המשיכי במסלול" ב-Hero, "מתחילה את המסלול" במקטע ההיכרות) —
- * זה בדיוק התיקון לבאג שבו לחיצה נחתה סמוך לסוף הצ'קליסט (הגלילה הישנה
- * הסתמכה על מרחק ה-pin של ה-Hero, לא על המיקום האמיתי של ראש המסלול);
- * (2) IntersectionObserver שמזהה הגעה בגלילה טבעית (בלי לחיצה על כפתור)
- * לראש המסלול, כדי לחשוף את ה-Chrome ולסמן hasSeenIntro גם במקרה הזה.
+ * roadmapTopRef משמש שני תפקידים: (1) יעד גלילה מדויק לכפתור ה-CTA שבסוף
+ * מקטע ההיכרות ("מתחילה את המסלול") — זה בדיוק התיקון לבאג שבו לחיצה נחתה
+ * סמוך לסוף הצ'קליסט (הגלילה הישנה הסתמכה על מרחק ה-pin של ה-Hero, לא על
+ * המיקום האמיתי של ראש המסלול); (2) IntersectionObserver שמזהה הגעה
+ * בגלילה טבעית (בלי לחיצה על כפתור) לראש המסלול, כדי לחשוף את ה-Chrome
+ * ולסמן hasSeenIntro גם במקרה הזה.
+ *
+ * personalIntroRef: יעד גלילה נפרד לכפתור ה-CTA הראשי שב-Hero ("להיכרות
+ * קצרה") — הכפתור הזה **לא** מדלג ישר למסלול (זה היה הבאג: משתמשת חדשה
+ * שלוחצת עליו מעולם לא ראתה את מקטע "טוב שהגעת"), אלא גולל בעדינות למקטע
+ * ההיכרות האישי עצמו. רק הכפתור שבסוף אותו מקטע ("מתחילה את המסלול") ממשיך
+ * הלאה ל-roadmapTopRef.
  */
 export default function AppShell() {
   const progress = useJourneyProgress();
@@ -58,20 +63,8 @@ export default function AppShell() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [openStepId, setOpenStepId] = useState<number | null>(null);
   const { showHero, chromeVisible, reducedMotion, revealChrome, resetHero } = useHeroScrollTransition();
-  const { status: authStatus } = useSession();
   const roadmapTopRef = useRef<HTMLDivElement | null>(null);
-  // "מי שכבר הייתה באתר" — יש לה **כל** סימון שמור (מקומי/מסונכרן), ולו
-  // תת-משימה אחת, או שהיא מחוברת לגוגל. בכוונה **לא** progress.hasAnyProgress
-  // הקיים (שם ההגדרה "שלב/בדיקה שלמה הושלמה" — מתאימה לכפתור האיפוס
-  // ב-RoadmapSection, אבל תחסיר כאן מי שסימנה כמה משימות בלי לסיים שלב
-  // שלם). לפני הידרציה (טעינת ה-localStorage) הכול 0 — ברירת המחדל נשארת
-  // "חדשה", כמו ההתנהגות הקיימת היום, ומתעדכנת תוך כדי טעינת הדף. קובעת
-  // רק את ניסוח כפתור ה-CTA ב-Hero (ר' HeroIntro.tsx) — לא קשורה ל-hasSeenIntro.
-  const isReturningVisitor =
-    progress.doneStepTasksCount > 0 ||
-    progress.completedTestSubItems.size > 0 ||
-    progress.selectedCareUnit !== null ||
-    authStatus === "authenticated";
+  const personalIntroRef = useRef<HTMLDivElement | null>(null);
 
   // בכל מעבר בין אזורים, גוללים לראש התוכן — כמו מעבר בין "עמודים" אמיתי
   useEffect(() => {
@@ -92,8 +85,9 @@ export default function AppShell() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [revealChrome, progress.markIntroSeen]);
 
-  // כפתורי ה-CTA (גם ב-Hero וגם במקטע ההיכרות) — גלילה מדויקת לראש המסלול
-  // בפועל (roadmapTopRef), לא להערכה/מרחק מחושב כלשהו. מכבדת prefers-reduced-motion.
+  // כפתור ה-CTA שבסוף מקטע ההיכרות ("מתחילה את המסלול") — גלילה מדויקת
+  // לראש המסלול בפועל (roadmapTopRef), לא להערכה/מרחק מחושב כלשהו. מכבדת
+  // prefers-reduced-motion.
   const scrollToRoadmap = useCallback(() => {
     const behavior: ScrollBehavior = reducedMotion ? "auto" : "smooth";
     roadmapTopRef.current?.scrollIntoView({ behavior, block: "start" });
@@ -104,9 +98,26 @@ export default function AppShell() {
     scrollToRoadmap();
   }, [handleReachedRoadmap, scrollToRoadmap]);
 
+  // כפתור ה-CTA הראשי ב-Hero ("להיכרות קצרה") — גולל בעדינות למקטע ההיכרות
+  // האישי עצמו, **לא** למסלול (זה התיקון לבאג: לחיצה כאן כבר לא מדלגת על
+  // "טוב שהגעת"). לא נוגע ב-Chrome/hasSeenIntro — אלה נחשפים רק כשמגיעים
+  // בפועל לראש המסלול (handleStartJourney/IntersectionObserver למטה).
+  const scrollToPersonalIntro = useCallback(() => {
+    const behavior: ScrollBehavior = reducedMotion ? "auto" : "smooth";
+    personalIntroRef.current?.scrollIntoView({ behavior, block: "start" });
+  }, [reducedMotion]);
+
   // הגעה לראש המסלול ע"י גלילה טבעית (בלי לחיצה על כפתור כלל) — פעיל רק
   // כל עוד ה-Hero מוצג וה-Chrome עדיין לא נחשף; מתנתק אוטומטית ברגע
   // שהמצב משתנה (cleanup בכל שינוי deps), כך שלא ממשיך "להאזין" לשווא.
+  //
+  // rootMargin שלילי בתחתית ("-60%") — לא threshold:0 סתם — כדי שהגעה
+  // תיחשב רק כשראש המסלול נכנס בפועל לרבע העליון של המסך, לא כשהוא רק
+  // "מציץ" בקצה התחתון. חשוב במיוחד עכשיו: מקטע ההיכרות (<PersonalIntroSection/>)
+  // קצר יותר מגובה המסך במסכים גבוהים, כך שבלי המרווח הזה, עצם הנחיתה על
+  // ראשו (בלחיצה על כפתור ה-Hero, ר' scrollToPersonalIntro) הייתה חושפת
+  // מיד את ה-Chrome ומסמנת hasSeenIntro — עוד לפני שהמשתמשת קראה משהו או
+  // לחצה על הכפתור של מקטע ההיכרות עצמו.
   useEffect(() => {
     if (!showHero || chromeVisible || section !== "roadmap") return;
     const el = roadmapTopRef.current;
@@ -115,7 +126,7 @@ export default function AppShell() {
       ([entry]) => {
         if (entry.isIntersecting) handleReachedRoadmap();
       },
-      { threshold: 0 }
+      { threshold: 0, rootMargin: "0px 0px -60% 0px" }
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -164,8 +175,10 @@ export default function AppShell() {
           עליהם לגמרי (showHero כבר false במקרה הזה, ר' useHeroScrollTransition). */}
       {section === "roadmap" && showHero && (
         <>
-          <HeroIntro reducedMotion={reducedMotion} onCtaClick={handleStartJourney} isReturningVisitor={isReturningVisitor} />
-          <PersonalIntroSection reducedMotion={reducedMotion} onCtaClick={handleStartJourney} />
+          <HeroIntro reducedMotion={reducedMotion} onCtaClick={scrollToPersonalIntro} />
+          <div ref={personalIntroRef}>
+            <PersonalIntroSection reducedMotion={reducedMotion} onCtaClick={handleStartJourney} />
+          </div>
         </>
       )}
 
