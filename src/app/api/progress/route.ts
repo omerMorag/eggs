@@ -22,6 +22,9 @@ function isValidStoredProgress(value: unknown): value is StoredProgress {
       v.selectedCareUnit !== null &&
       typeof (v.selectedCareUnit as Record<string, unknown>).id === "string" &&
       typeof (v.selectedCareUnit as Record<string, unknown>).name === "string");
+  // hasSeenIntro: שדה חדש, אופציונלי-לצורך-תאימות-לאחור בלבד — payload ישן
+  // (מלפני שהתווסף) פשוט לא כולל אותו כלל, ולא אמור להיפסל בגלל זה.
+  const hasSeenIntroValid = v.hasSeenIntro === undefined || typeof v.hasSeenIntro === "boolean";
   return (
     Array.isArray(v.steps) &&
     Array.isArray(v.stepTasks) &&
@@ -29,7 +32,8 @@ function isValidStoredProgress(value: unknown): value is StoredProgress {
     Array.isArray(v.testSubItems) &&
     typeof v.testDates === "object" &&
     v.testDates !== null &&
-    selectedCareUnitValid
+    selectedCareUnitValid &&
+    hasSeenIntroValid
   );
 }
 

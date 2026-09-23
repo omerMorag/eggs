@@ -23,10 +23,23 @@ export interface StoredProgress {
    *  שדה חדש (לא שינוי מבנה קיים) — נתונים ישנים ב-localStorage/Redis פשוט לא כוללים אותו,
    *  ו-readStorage למטה מתייחס לחסרונו כ-null, בלי צורך במיגרציה אמיתית. */
   selectedCareUnit: { id: string; name: string } | null;
+  /** האם המשתמשת כבר "סיימה לצפות" בחוויית הפתיחה (מסך הפתיחה + מקטע ההיכרות
+   *  האישי) — פעם אחת true, נשאר true לצמיתות (לא מתאפס לעולם, גם לא ב-reset()).
+   *  שדה חדש נוסף באותו האופן בדיוק כמו selectedCareUnit למעלה — חסרונו בנתונים
+   *  ישנים מתפרש כ-false (עדיין לא נצפתה), בלי מיגרציה. ר' useHeroScrollTransition.ts. */
+  hasSeenIntro: boolean;
 }
 
 function emptyProgress(): StoredProgress {
-  return { steps: [], stepTasks: [], tests: [], testSubItems: [], testDates: {}, selectedCareUnit: null };
+  return {
+    steps: [],
+    stepTasks: [],
+    tests: [],
+    testSubItems: [],
+    testDates: {},
+    selectedCareUnit: null,
+    hasSeenIntro: false,
+  };
 }
 
 /** "הדבר הבא שלך" — נגזר תמיד מ-completedStepTasks, אין state ידני נפרד
@@ -114,6 +127,7 @@ function readStorage(): StoredProgress {
       testSubItems: Array.isArray(parsed.testSubItems) ? parsed.testSubItems : [],
       testDates,
       selectedCareUnit,
+      hasSeenIntro: parsed.hasSeenIntro === true,
     };
   } catch {
     return emptyProgress();
@@ -127,6 +141,14 @@ function writeStorage(data: StoredProgress) {
   } catch {
     // localStorage may be unavailable (private mode / quota) — fail silently
   }
+}
+
+/** קריאה חד-פעמית וסינכרונית (לא ממתינה ל-hydration של ה-hook) של דגל
+ *  hasSeenIntro בלבד — נחוצה ל-useHeroScrollTransition כדי להחליט *לפני*
+ *  הציור הראשון של הדפדפן (useLayoutEffect) אם להציג את מסך הפתיחה בכלל,
+ *  בלי לצמד את שני ה-hooks זה לזה או לחכות למחזור הטעינה המלא של useJourneyProgress. */
+export function hasSeenIntroInStorage(): boolean {
+  return readStorage().hasSeenIntro;
 }
 
 /** מספר הרכיבים הניתנים לסימון בתוך בדיקה נתונה — לפחות 1 (fallback לבדיקה בלי subItems מוגדרים) */
@@ -174,12 +196,17 @@ export function useJourneyProgress() {
   const [testDates, setTestDates] = useState<Record<number, string>>({});
   // היחידה שנבחרה בכלי "איפה כדאי לעשות?" — ראו StoredProgress.selectedCareUnit
   const [selectedCareUnit, setSelectedCareUnit] = useState<{ id: string; name: string } | null>(null);
+  // ראו StoredProgress.hasSeenIntro — ברירת המחדל false נכונה גם לפני
+  // hydration (useHeroScrollTransition כבר קרא את הדגל בעצמו, סינכרונית, לפני
+  // הציור הראשון; ה-state כאן משמש רק את markIntroSeen/הסנכרון לשרת).
+  const [hasSeenIntro, setHasSeenIntro] = useState(false);
 
   // טעינה חד-פעמית מה-localStorage בצד הלקוח
   useEffect(() => {
     const stored = readStorage();
     setTestDates(stored.testDates);
     setSelectedCareUnit(stored.selectedCareUnit);
+    setHasSeenIntro(stored.hasSeenIntro);
 
     // מיגרציה: נתוני התקדמות ישנים (מלפני תתי-המשימות של Roadmap 2.0) שמרו
     // רק אילו שלבים "הושלמו" כמקשה אחת ב-steps, דרך checkbox ידני יחיד לכל
@@ -231,8 +258,18 @@ export function useJourneyProgress() {
       testSubItems: Array.from(completedTestSubItems),
       testDates,
       selectedCareUnit,
+      hasSeenIntro,
     });
-  }, [completedSteps, completedStepTasks, completedTests, completedTestSubItems, testDates, selectedCareUnit, hydrated]);
+  }, [
+    completedSteps,
+    completedStepTasks,
+    completedTests,
+    completedTestSubItems,
+    testDates,
+    selectedCareUnit,
+    hasSeenIntro,
+    hydrated,
+  ]);
 
   // --- סנכרון ענן אופציונלי (Google + Upstash Redis) ---
   // מצב אורחת (לא מחוברת) ממשיך לעבוד בדיוק כמו קודם — כל הלוגיקה כאן פועלת
@@ -275,6 +312,7 @@ export function useJourneyProgress() {
           testSubItems: Array.from(completedTestSubItems),
           testDates,
           selectedCareUnit,
+          hasSeenIntro,
         });
         return;
       }
@@ -297,12 +335,16 @@ export function useJourneyProgress() {
 
       // בחירת יחידה: כמו testDates, נתוני השרת גוברים אם קיימים (ערך אחרון-שנבחר), אחרת נשאר המקומי
       const mergedSelectedCareUnit = serverData.selectedCareUnit ?? selectedCareUnit;
+      // hasSeenIntro: איחוד "או" — בדיוק כמו סימוני משימות/בדיקות, פעם אחת
+      // true בכל מכשיר/חשבון אמורה להישאר true בכולם, לעולם לא "מתבטלת" במיזוג.
+      const mergedHasSeenIntro = hasSeenIntro || serverData.hasSeenIntro === true;
 
       if (cancelled) return;
       setCompletedStepTasks(mergedStepTasks);
       setCompletedTestSubItems(mergedSubItems);
       setTestDates(mergedDates);
       setSelectedCareUnit(mergedSelectedCareUnit);
+      setHasSeenIntro(mergedHasSeenIntro);
 
       const mergedSteps = Array.from(deriveCompletedSteps(mergedStepTasks));
 
@@ -326,6 +368,7 @@ export function useJourneyProgress() {
         testSubItems: Array.from(mergedSubItems),
         testDates: mergedDates,
         selectedCareUnit: mergedSelectedCareUnit,
+        hasSeenIntro: mergedHasSeenIntro,
       });
     })();
 
@@ -350,13 +393,24 @@ export function useJourneyProgress() {
         testSubItems: Array.from(completedTestSubItems),
         testDates,
         selectedCareUnit,
+        hasSeenIntro,
       });
     }, 1500);
 
     return () => {
       if (pushTimeoutRef.current) clearTimeout(pushTimeoutRef.current);
     };
-  }, [completedSteps, completedStepTasks, completedTests, completedTestSubItems, testDates, selectedCareUnit, hydrated, userId]);
+  }, [
+    completedSteps,
+    completedStepTasks,
+    completedTests,
+    completedTestSubItems,
+    testDates,
+    selectedCareUnit,
+    hasSeenIntro,
+    hydrated,
+    userId,
+  ]);
 
   /** מסמנת/מבטלת משימה בודדת בתוך שלב במסלול (Roadmap 2.0). השלב עצמו
    *  מחושב כ"הושלם" אוטומטית (derived) כשכל המשימות שלו מסומנות — אין יותר
@@ -435,6 +489,15 @@ export function useJourneyProgress() {
     setSelectedCareUnit(null);
   }, []);
 
+  /** מסמנת שהמשתמשת סיימה לצפות בחוויית הפתיחה — נקראת רק כשהיא לחצה על
+   *  כפתור ההתחלה או הגיעה בפועל לראש המסלול בגלילה טבעית (ר' AppShell.tsx),
+   *  לעולם לא רק כי עמוד הבית נטען. אידמפוטנטית ולא הפיכה: ברגע שהיא true
+   *  נשארת true גם אחרי reset() של שאר ההתקדמות (זו לא "התקדמות במסלול",
+   *  אלא רק "כבר ראתה את המסך הזה"). */
+  const markIntroSeen = useCallback(() => {
+    setHasSeenIntro((prev) => (prev ? prev : true));
+  }, []);
+
   const reset = useCallback(() => {
     setCompletedStepTasks(new Set());
     setCompletedTestSubItems(new Set());
@@ -484,12 +547,14 @@ export function useJourneyProgress() {
     completedTestSubItems,
     testDates,
     selectedCareUnit,
+    hasSeenIntro,
     toggleStepTask,
     toggleTest,
     toggleTestSubItem,
     updateTestDate,
     selectCareUnit,
     clearCareUnitSelection,
+    markIntroSeen,
     reset,
     totalSteps,
     totalTests,

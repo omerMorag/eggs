@@ -5,6 +5,7 @@ import ProgressCard from "./ProgressCard";
 import NavList from "./NavList";
 import AuthControl from "./AuthControl";
 import AdminNavLink from "./AdminNavLink";
+import AboutLink from "./AboutLink";
 
 interface SidebarProps {
   section: SectionId;
@@ -34,6 +35,10 @@ export default function Sidebar({ section, progress, onNavigate, onGoHome }: Sid
       <NavList activeSection={section} onNavigate={onNavigate} />
 
       <AdminNavLink activeSection={section} onNavigate={onNavigate} />
+
+      <div className="mt-auto border-t border-mist-200 pt-2">
+        <AboutLink onClick={onGoHome} />
+      </div>
     </aside>
   );
 }

@@ -1,40 +1,57 @@
 "use client";
 
 import { useCallback, useLayoutEffect, useState } from "react";
+import { hasSeenIntroInStorage } from "./useJourneyProgress";
 
 export interface HeroScrollTransition {
-  /** האם לרנדר <HeroIntro/> כלל */
+  /** האם לרנדר <HeroIntro/> + <PersonalIntroSection/> כלל */
   showHero: boolean;
-  /** האם Sidebar/MobileHeader גלויים (מקביל ל-journeyChromeVisible הישן) */
+  /** האם Sidebar/MobileHeader גלויים */
   chromeVisible: boolean;
   /** prefers-reduced-motion, נבדק ב-mount ומעודכן אם המשתמשת משנה את ההעדפה */
   reducedMotion: boolean;
-  /** HeroIntro קורא לזה פעם אחת כשהמעבר הסתיים (סוף ה-pin, או מיד ב-reducedMotion) */
-  onHeroComplete: () => void;
-  /** ללחיצה על הלוגו — "חוזרת" למסך הפתיחה, בדיוק כמו ההתנהגות הקיימת היום */
+  /** נקראת כשהמסלול "הושג" בפועל — גם בלחיצה על אחד מכפתורי ה-CTA וגם
+   *  בהגעה בפועל לראש המסלול בגלילה טבעית (ר' AppShell.tsx). לא מסתירה את
+   *  ה-Hero/מקטע ההיכרות עצמם (הם נשארים mounted מעל המסלול בטעינת העמוד
+   *  הנוכחית — אין יותר spacer מלאכותי שצריך "לפנות", ר' תיעוד showHero
+   *  למטה) — רק חושפת את ה-Chrome. */
+  revealChrome: () => void;
+  /** מדלגת מיידית על כל חוויית הפתיחה — למשל כשמתברר, אחרי סנכרון מהשרת
+   *  שהושלם רק אחרי ה-mount (מכשיר חדש למשתמשת מחוברת), שהיא כבר ראתה
+   *  אותה במכשיר אחר. */
+  skipHero: () => void;
+  /** ללחיצה על הלוגו / קישור "להכיר את מקפיאות" — "חוזרת" למסך הפתיחה, גם
+   *  אם hasSeenIntro כבר true (זו רק תצוגה חוזרת מודעת, לא "שוכחת" שהיא כבר ראתה). */
   resetHero: () => void;
 }
 
 /**
- * שולט רק ב"מתי" — מתי מוצג ה-Hero ומתי חוזרים לראות את ה-Sidebar/Header.
- * אנימציית הגלילה עצמה (pin/scrub) חיה לגמרי בתוך HeroIntro.tsx; ה-hook
- * הזה לא יודע כלום על GSAP.
+ * שולט רק ב"מתי" — מתי מוצגים ה-Hero + מקטע ההיכרות האישי (כתוכן זרימה
+ * רגיל, לא pin/scrub) ומתי חוזרים לראות את ה-Sidebar/Header. אנימציות
+ * הכניסה העדינות (fade/rise קצר) חיות בתוך HeroIntro.tsx/PersonalIntroSection.tsx
+ * עצמם; ה-hook הזה לא יודע כלום על GSAP או על scroll-trigger כלשהו —
+ * הגלילה עצמה תמיד נשארת גלילה טבעית רגילה של הדפדפן.
  *
- * מחליף את useIntroJourneyTransition.ts הישן (מסך overlay דיסקרטי עם
- * translateY) — כאן אין יותר state machine "intro"/"journey" עם מחוות
- * גלילה/מגע/מקלדת ידניות; ה-Hero הוא סקשן רגיל בזרימת המסמך, וה-pin
- * האמיתי (ב-HeroIntro) הוא זה שיוצר את תחושת "מסך קבוע בזמן שגוללים".
+ * showHero מוכרעת **פעם אחת** ב-mount (hash מפורש בכתובת, או hasSeenIntro
+ * שמור מביקור קודם — נקרא סינכרונית מ-localStorage לפני הציור הראשון, כדי
+ * שלא תהיה הבהוב של מסך הפתיחה שנעלם מיד). אחרי זה היא נשארת true לכל
+ * אורך הביקור הנוכחי — כשה-Hero+מקטע ההיכרות הם תוכן זרימה רגיל (לא
+ * pinned), אין סיבה "להסיר" אותם אחרי שהמשתמשת עברה אותם; הם פשוט נשארים
+ * למעלה כמו כל תוכן אחר שגוללים מעליו.
  */
 export function useHeroScrollTransition(): HeroScrollTransition {
   const [showHero, setShowHero] = useState(true);
   const [chromeVisible, setChromeVisible] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
 
-  // בדיקת hash ראשונית — כניסה ישירה לכתובת עם #tag (למשל #tests) מדלגת
-  // על ה-Hero לגמרי, בדיוק כמו ההתנהגות הקיימת ב-hook הישן.
-  // useLayoutEffect כדי שהתיקון יקרה לפני הציור הראשון של הדפדפן.
+  // בדיקה ראשונית — גם hash מפורש בכתובת (כניסה ישירה ל-#tests וכו') וגם
+  // hasSeenIntro שמור (ביקור חוזר) מדלגים על ה-Hero לגמרי. useLayoutEffect
+  // כדי שהתיקון יקרה לפני הציור הראשון של הדפדפן, ובלי לחכות ל-hydration
+  // של useJourneyProgress (ר' hasSeenIntroInStorage — קריאה סינכרונית נפרדת
+  // ומכוונת מאותו מפתח localStorage, כדי לא לצמד את שני ה-hooks זה לזה).
   useLayoutEffect(() => {
-    if (typeof window !== "undefined" && window.location.hash) {
+    if (typeof window === "undefined") return;
+    if (window.location.hash || hasSeenIntroInStorage()) {
       setShowHero(false);
       setChromeVisible(true);
     }
@@ -51,35 +68,25 @@ export function useHeroScrollTransition(): HeroScrollTransition {
     return () => mq.removeEventListener?.("change", handleChange);
   }, []);
 
-  // ב-reducedMotion: HeroIntro קורא ל-onHeroComplete מיד ב-mount (כדי
-  // ש-Sidebar/Header יהיו גלויים מההתחלה) — אבל שם showHero=false היה
-  // מסיר את ה-Hero מה-DOM באותו רגע, לפני שהוא בכלל צויר על המסך. ב-
-  // reducedMotion צריך את שני הדברים בו-זמנית: "מקפיאות רגיל ↓ Roadmap
-  // רגיל" — כלומר Hero *נשאר* מוצג כסקשן סטטי, ו-Chrome גם גלוי מיד.
-  // רק במעבר המונפש (pin אמיתי) יש טעם להסיר את ה-Hero אחרי שהושלם —
-  // אחרת נשאר spacer ריק וגדול בזרימת המסמך לצמיתות.
-  const onHeroComplete = useCallback(() => {
+  const revealChrome = useCallback(() => {
     setChromeVisible(true);
-    if (!reducedMotion) {
-      setShowHero(false);
-    }
-  }, [reducedMotion]);
+  }, []);
+
+  const skipHero = useCallback(() => {
+    setShowHero(false);
+    setChromeVisible(true);
+  }, []);
 
   const resetHero = useCallback(() => {
     setShowHero(true);
-    // ב-reducedMotion ה-Hero ממילא תמיד מוצג — אין טעם/צורך להסתיר את
-    // ה-Chrome שוב (זו רק תזוזה מיותרת למשתמשת שמעדיפה כמה שפחות תנועה).
-    if (!reducedMotion) {
-      setChromeVisible(false);
-    }
+    setChromeVisible(false);
     if (typeof window !== "undefined") {
       // behavior: "instant" בכוונה, לא ברירת המחדל — globals.css מגדיר
       // `html { scroll-behavior: smooth }` גלובלית, וגלילה "רכה" כאן הייתה
-      // מתנגשת עם ה-scrollTo המפורש שב-HeroIntro.tsx (שרץ מיד אחרי, ברגע
-      // שהוא נטען מחדש) ומשאירה את הדף במקום לא-צפוי.
+      // מתנגשת עם החזרה המיידית לראש המסך שמצופה מלחיצה על הלוגו/הקישור.
       window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     }
-  }, [reducedMotion]);
+  }, []);
 
-  return { showHero, chromeVisible, reducedMotion, onHeroComplete, resetHero };
+  return { showHero, chromeVisible, reducedMotion, revealChrome, skipHero, resetHero };
 }

@@ -10,6 +10,7 @@ import ProgressCard from "./ProgressCard";
 import NavList from "./NavList";
 import AuthControl from "./AuthControl";
 import AdminNavLink from "./AdminNavLink";
+import AboutLink from "./AboutLink";
 
 interface MobileDrawerProps {
   open: boolean;
@@ -120,6 +121,16 @@ export default function MobileDrawer({
               onClose();
             }}
           />
+
+          <div className="mt-auto border-t border-mist-200 pt-2">
+            <AboutLink
+              focusable={open}
+              onClick={() => {
+                onGoHome();
+                onClose();
+              }}
+            />
+          </div>
         </div>
       </div>
     </FloatingPortal>

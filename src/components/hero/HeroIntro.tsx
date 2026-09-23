@@ -1,124 +1,58 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 interface HeroIntroProps {
-  /** true כש-prefers-reduced-motion פעיל — מבוטל pin/scrub לגמרי, הכול נשאר סקשן רגיל וסטטי */
+  /** true כש-prefers-reduced-motion פעיל — מבטל את אנימציית הכניסה העדינה
+   *  בלבד (התוכן פשוט מופיע ישר, בלי fade/rise). שום שינוי מבני אחר. */
   reducedMotion: boolean;
-  /** נקרא פעם אחת כשהמעבר הסתיים (שחרור ה-pin), או מיד ב-mount כש-reducedMotion */
-  onComplete: () => void;
+  /** נקראת בלחיצה על כפתור ה-CTA — האחריות המלאה על "מה קורה אז" (חשיפת
+   *  ה-Chrome, סימון hasSeenIntro, וגלילה מדויקת לראש המסלול) נמצאת אצל
+   *  AppShell.tsx; הרכיב הזה לא יודע עליה כלום. */
+  onCtaClick: () => void;
   /** true כשיש למשתמשת התקדמות שמורה (מקומית/מסונכרנת) או שהיא מחוברת
-   *  לגוגל — קובע רק את ניסוח כפתור ה-CTA ("המשיכי במסלול" לעומת "התחילי
-   *  במסלול"), כדי שיהיה ברור-מיד שהכפתור קופץ ישר למסלול בלי לגלול
-   *  בפועל. שום שינוי אחר בעיצוב/במנגנון עצמו. */
+   *  לגוגל — קובע רק את ניסוח כפתור ה-CTA ("המשיכי במסלול" לעומת
+   *  "התחילי במסלול"). שום שינוי אחר בעיצוב/במנגנון. */
   isReturningVisitor: boolean;
 }
 
 /**
- * מסך הכניסה החדש ("Hero"): כרזה עריכתית מינימלית — התרנגולת הראשית
- * הקיימת של המותג (אותה תמונה מ-Logo.tsx, public/brand/hen-full.png),
- * הוורדמארק "מקפיאות" בגודל גדול ובמשקל עדין, משפט אחד, ושורת פיצ'רים
- * עדינה. אין כאן cards/gradients/כפתור ענק — רק טיפוגרפיה, קומפוזיציה
- * ומרווח, לפי הבקשה המפורשת.
+ * מסך הכניסה ("Hero"): כרזה עריכתית מינימלית — התרנגולת הראשית הקיימת של
+ * המותג (public/brand/hen-full.png), הוורדמארק "מקפיאות" בגודל גדול
+ * ובמשקל עדין, משפט אחד, ושורת פיצ'רים עדינה. אין כאן cards/gradients/
+ * כפתור ענק — רק טיפוגרפיה, קומפוזיציה ומרווח.
  *
- * מנגנון הגלילה: האלמנט הפנימי (pinRef) הוא גם ה-trigger וגם היעד
- * ל-pin — טכניקת GSAP הסטנדרטית ("pin: true" על אותו אלמנט, עם end
- * יחסי כמו "+=180%"). GSAP בעצמו יוצר spacer בגובה הנכון, כך שאין צורך
- * במעטפת עם height מלאכותי — מרחק הגלילה נגזר ישירות מה-end.
- *
- * ב-reducedMotion: אין pin/scrub בכלל — Hero מוצג כסקשן רגיל וסטטי מעל
- * ה-Roadmap, ו-onComplete נקרא מיד ב-mount (Sidebar/Header גלויים
- * מההתחלה, בדיוק "Hero רגיל ↓ Roadmap רגיל" שהתבקש).
+ * תוכן זרימה רגיל לגמרי — לא pinned ולא scroll-scrubbed. גלילה (גלגלת/
+ * מגע) תמיד מגיבה מיד ומעבירה טבעית למקטע הבא (<PersonalIntroSection/>,
+ * ואז המסלול); שום דבר כאן לא "תופס" את הגלילה. האנימציה היחידה היא כניסה
+ * עדינה חד-פעמית ב-mount (fade+rise קצר, ~200ms) — לא קשורה לסקרול בכלל.
  */
-export default function HeroIntro({ reducedMotion, onComplete, isReturningVisitor }: HeroIntroProps) {
-  const pinRef = useRef<HTMLDivElement | null>(null);
-  const henRef = useRef<HTMLImageElement | null>(null);
-  const wordmarkRef = useRef<HTMLHeadingElement | null>(null);
-  const taglineRef = useRef<HTMLParagraphElement | null>(null);
-  const featureLineRef = useRef<HTMLParagraphElement | null>(null);
-  const ctaRef = useRef<HTMLButtonElement | null>(null);
-  const scrollTriggerRef = useRef<ScrollTrigger | null>(null);
-  // onComplete עלול להגיע כ-closure חדש בכל render (הוא נוצר מחדש ב-hook
-  // ההורה); שומרים אותו ב-ref כדי שה-callbacks של GSAP (שנוצרים פעם אחת
-  // בתוך ה-context) תמיד יקראו לגרסה העדכנית בלי לגרום ל-effect לרוץ מחדש.
-  const onCompleteRef = useRef(onComplete);
-  onCompleteRef.current = onComplete;
+export default function HeroIntro({ reducedMotion, onCtaClick, isReturningVisitor }: HeroIntroProps) {
+  const [visible, setVisible] = useState(reducedMotion);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (reducedMotion) {
-      onCompleteRef.current();
+      setVisible(true);
       return;
     }
-    if (!pinRef.current) return;
-
-    // כש-HeroIntro מתחבר מחדש (למשל אחרי resetHero מלחיצה על הלוגו),
-    // ה-spacer הגדול של ה-pin נוסף מעל RoadmapSection ב-DOM; scroll
-    // anchoring טבעי של הדפדפן עלול "לפצות" על הגובה החדש שנוסף מעל
-    // הגלילה הנוכחית ולדחוף את scrollY למטה בעצמו. לכן מוודאים במפורש
-    // שהדף באמת נמצא ב-0 *אחרי* שה-DOM כבר השתנה, ולפני יצירת ה-ScrollTrigger.
-    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-
-    gsap.registerPlugin(ScrollTrigger);
-
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: pinRef.current,
-          start: "top top",
-          end: "+=180%",
-          scrub: 1,
-          pin: true,
-          anticipatePin: 1,
-          onLeave: () => onCompleteRef.current(),
-        },
-      });
-      scrollTriggerRef.current = tl.scrollTrigger ?? null;
-
-      // ~0.15–0.35: המילה "מקפיאות" מתחילה לעלות מעט, המשפט והפיצ'רים נעלמים בעדינות
-      tl.to(wordmarkRef.current, { y: -36, duration: 0.2, ease: "none" }, 0.15)
-        .to(
-          [taglineRef.current, featureLineRef.current],
-          { opacity: 0, y: -12, duration: 0.15, ease: "none" },
-          0.15
-        )
-        .to(ctaRef.current, { opacity: 0, duration: 0.08, ease: "none" }, 0.1)
-        // ~0.35–0.6: התרנגולת מקטינה ונעה בעדינות
-        .to(henRef.current, { scale: 0.82, y: -44, duration: 0.25, ease: "none" }, 0.35)
-        // ~0.55–0.8: המשך דעיכת התרנגולת והוורדמארק — זה מה שחושף ויזואלית את ה-Roadmap שמתחת
-        .to(henRef.current, { opacity: 0, duration: 0.2, ease: "none" }, 0.58)
-        .to(wordmarkRef.current, { opacity: 0, duration: 0.2, ease: "none" }, 0.78);
-    });
-
-    return () => {
-      scrollTriggerRef.current = null;
-      ctx.revert();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // פריים אחד אחרי ה-mount, כדי שהדפדפן יספיק לצייר את המצב ההתחלתי
+    // (opacity:0) לפני שה-transition מתחיל — אחרת אין מה להנפיש.
+    const id = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(id);
   }, [reducedMotion]);
 
-  const handleCtaClick = () => {
-    const end = scrollTriggerRef.current?.end;
-    if (typeof end === "number") {
-      window.scrollTo({ top: end, behavior: "smooth" });
-    }
-  };
-
   return (
-    <section aria-label="מקפיאות — מסך פתיחה">
+    <section aria-label="מקפיאות — מסך פתיחה" className="h-screen-safe flex flex-col items-center justify-center px-4 text-center">
       <div
-        ref={pinRef}
-        className={
-          reducedMotion
-            ? "flex flex-col items-center justify-center gap-6 px-4 py-16 text-center sm:gap-7 sm:py-24"
-            : "flex h-screen-safe flex-col items-center justify-center gap-6 px-4 text-center sm:gap-7"
-        }
+        className="flex flex-col items-center gap-6 transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none sm:gap-7"
+        style={{
+          opacity: visible ? 1 : 0,
+          transform: visible ? "translateY(0)" : "translateY(14px)",
+        }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          ref={henRef}
           src="/brand/hen-full.png"
           alt="מקפיאות — תרנגולת המותג"
           className="h-auto w-40 max-w-full object-contain sm:w-56 lg:w-[340px]"
@@ -126,7 +60,6 @@ export default function HeroIntro({ reducedMotion, onComplete, isReturningVisito
         />
 
         <h1
-          ref={wordmarkRef}
           className="text-ink"
           style={{
             fontSize: "clamp(3rem, 11vw, 9rem)",
@@ -138,28 +71,23 @@ export default function HeroIntro({ reducedMotion, onComplete, isReturningVisito
           מקפיאות
         </h1>
 
-        <p ref={taglineRef} className="max-w-md text-lg text-ink/70 sm:text-xl">
-          עושות סדר בדרך להקפאת ביציות.
-        </p>
+        <p className="max-w-md text-lg text-ink/70 sm:text-xl">עושות סדר בדרך להקפאת ביציות.</p>
 
-        <p ref={featureLineRef} className="max-w-sm text-xs text-ink/45 sm:max-w-none sm:text-sm">
+        <p className="max-w-sm text-xs text-ink/45 sm:max-w-none sm:text-sm">
           המסלול שלי · איפה לעשות · עלויות · סיכויים · מדריכים
         </p>
 
-        {!reducedMotion && (
-          <button
-            ref={ctaRef}
-            type="button"
-            onClick={handleCtaClick}
-            className="group mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-ink/60 transition-colors hover:text-teal-600"
-          >
-            {isReturningVisitor ? "המשיכי במסלול" : "התחילי במסלול"}
-            <ChevronDown
-              className="h-4 w-4 transition-transform group-hover:translate-y-0.5"
-              strokeWidth={2.25}
-            />
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={onCtaClick}
+          className="group mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-ink/60 transition-colors hover:text-teal-600"
+        >
+          {isReturningVisitor ? "המשיכי במסלול" : "התחילי במסלול"}
+          <ChevronDown
+            className="h-4 w-4 transition-transform group-hover:translate-y-0.5"
+            strokeWidth={2.25}
+          />
+        </button>
       </div>
     </section>
   );
