@@ -1,4 +1,4 @@
-import { BookOpen, FlaskConical, Heart, ListChecks, MapPin, Percent, Wallet } from "lucide-react";
+import { BookOpen, FlaskConical, Heart, ListChecks, MapPin, Percent } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export type SectionId =
@@ -27,10 +27,15 @@ export const navSections: NavSectionDef[] = [
   { id: "tests", label: "הבדיקות שלי", icon: FlaskConical },
   { id: "where-to-go", label: "איפה כדאי לעשות?", icon: MapPin },
   { id: "my-chances", label: "מה הסיכוי שלי?", icon: Percent },
-  { id: "cost-estimator", label: "כמה יעלה לי?", icon: Wallet },
   { id: "stories", label: "סיפורים מהמקפיא", icon: Heart },
   { id: "guides", label: "יום השאיבה", icon: BookOpen },
 ];
+
+// "cost-estimator" ("כמה יעלה לי?") הוסתר זמנית לבקשת המשתמשת (24.9.2026):
+// הוצא מהתפריט, ו-hash ישיר אליו נופל לברירת המחדל כי isSectionId בודק רק
+// את navSections. הקוד עצמו (CostEstimatorSection וכו') נשאר — כדי להחזיר,
+// מספיק להוסיף בחזרה את השורה:
+//   { id: "cost-estimator", label: "כמה יעלה לי?", icon: Wallet },
 
 // "admin-stories" נשאר מחוץ ל-navSections בכוונה: NavList.tsx המשותף לא
 // מציג אותו כברירת מחדל. קישור הניווט שלו מתווסף ידנית ב-Sidebar/MobileDrawer
