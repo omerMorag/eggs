@@ -75,7 +75,7 @@ export default function InjectionsSection() {
           </p>
         </div>
         <div className="no-print mt-4 flex justify-center lg:mt-0 lg:shrink-0 lg:justify-end">
-          <HenIllustration name="step-injections" blob="mint" sizeClassName="w-24 sm:w-32 lg:w-44" />
+          <HenIllustration name="step-monitoring" blob="mint" sizeClassName="w-36 sm:w-40 lg:w-52" />
         </div>
       </section>
 
