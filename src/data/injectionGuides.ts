@@ -8,8 +8,10 @@
  *    אחרי שנבדק בו שם התכשיר, החוזק וצורת התכשיר. העלון העדכני ביותר תמיד
  *    זמין גם בחיפוש במאגר עצמו (MOH_DRUG_INDEX_URL).
  *  - EMA: דף ה-EPAR הרשמי, כמידע נוסף באנגלית (לתכשירים שאושרו באיחוד).
- *  - סרטון: רק כשנמצא סרטון רשמי של היצרן בישראל לאותו תכשיר בדיוק.
- *    לתכשירים אחרים לא נמצא סרטון שאפשר היה לאמת את התאמתו — ולכן אין.
+ *  - סרטונים: רק ממקורות ישראליים (בקשת המשתמשת, 24.9.2026) — סרטוני היצרן
+ *    של פרינג ישראל, סרטוני Merck שמוצגים באתר הרצליה מדיקל סנטר, וסרטוני
+ *    אגף הנשים בוולפסון (יוטיוב). את הסרטונים עצמם לא ניתן היה לצפות ולוודא
+ *    שהתכשיר בהם זהה בדיוק לתכשיר המשווק — ולכן כל סרטון מסומן כך בכרטיס.
  */
 
 export const MOH_DRUG_INDEX_URL = "https://israeldrugs.health.gov.il/#!/byDrug";
@@ -37,7 +39,7 @@ export interface InjectionGuide {
   strengths?: string;
   leaflet: GuideLink;
   extraSources: GuideLink[];
-  /** סרטוני הדרכה רשמיים שאומתו לאותו תכשיר בדיוק. ריק = אין כפתור סרטון */
+  /** סרטוני הדרכה ממקורות ישראליים. ריק = אין כפתור סרטון */
   videos: GuideLink[];
   /** מה עוד לא נמצא/אומת לתכשיר הזה */
   missing?: string;
@@ -57,11 +59,17 @@ export const injectionGuides: InjectionGuide[] = [
       url: "https://mohpublic.z6.web.core.windows.net/IsraelDrugs/Rishum01_17_297385824.pdf",
       detail: "עברית, נערך ביולי 2024",
     },
-    videos: [],
+    videos: [
+      {
+        label: "סרטון הדרכה",
+        url: "https://www.youtube.com/watch?v=h8BInuPLqdc",
+        detail: "הרצליה מדיקל סנטר · Merck · עברית",
+      },
+    ],
     extraSources: [
       { label: "GONAL-f — מידע רשמי של סוכנות התרופות האירופית (EMA)", url: "https://www.ema.europa.eu/en/medicines/human/EPAR/gonal-f", detail: "אנגלית" },
     ],
-    missing: "לא נמצא סרטון הדרכה רשמי שאפשר היה לוודא שמציג את העט המשווק בישראל.",
+    missing: "לא נבדק אם הסרטון מציג בדיוק את העט המשווק כיום — ההוראות הקובעות הן העלון וההדרכה ביחידה.",
   },
   {
     id: "pergoveris",
@@ -76,11 +84,17 @@ export const injectionGuides: InjectionGuide[] = [
       url: "https://mohpublic.z6.web.core.windows.net/IsraelDrugs/Rishum01_9_275140423.pdf",
       detail: "עברית, אנגלית וערבית; עלון מ-2022",
     },
-    videos: [],
+    videos: [
+      {
+        label: "סרטון הדרכה",
+        url: "https://www.youtube.com/watch?v=KZnObQwgADo",
+        detail: "הרצליה מדיקל סנטר · Merck · עברית",
+      },
+    ],
     extraSources: [
       { label: "Pergoveris — מידע רשמי של EMA", url: "https://www.ema.europa.eu/en/medicines/human/EPAR/pergoveris", detail: "אנגלית; באיחוד קיימים גם בקבוקוני אבקה" },
     ],
-    missing: "לא נמצא סרטון רשמי שאפשר היה לאמת שמתאים לעט. אם קיבלת פרגובריס בבקבוקוני אבקה — העלון כאן הוא לעט, ויש לבקש מהיחידה את העלון המתאים.",
+    missing: "לא נבדק אם הסרטון מציג את העט או את הבקבוקונים. אם קיבלת פרגובריס בבקבוקוני אבקה — העלון כאן הוא לעט, ויש לבקש מהיחידה את העלון המתאים.",
   },
   {
     id: "menopur-multidose",
@@ -98,14 +112,14 @@ export const injectionGuides: InjectionGuide[] = [
     extraSources: [],
     videos: [
       {
-        label: "סרטון הדרכה — מנופור מולטידוז 600 (פרינג ישראל)",
+        label: "סרטון הדרכה — מולטידוז 600",
         url: "https://www.ferring.co.il/our-products/menopur-600-injection-tutorial/",
-        detail: "סרטון היצרן בעברית, ערבית, רוסית ואנגלית",
+        detail: "פרינג ישראל · עברית, ערבית, רוסית ואנגלית",
       },
       {
-        label: "סרטון הדרכה — מנופור מולטידוז 1200 (פרינג ישראל)",
+        label: "סרטון הדרכה — מולטידוז 1200",
         url: "https://www.ferring.co.il/our-products/menopur-1200-injection-tutorial/",
-        detail: "סרטון היצרן בעברית, ערבית ורוסית",
+        detail: "פרינג ישראל · עברית, ערבית ורוסית",
       },
     ],
   },
@@ -122,9 +136,15 @@ export const injectionGuides: InjectionGuide[] = [
       url: "https://mohpublic.z6.web.core.windows.net/IsraelDrugs/Rishum_16_338405420.pdf",
       detail: "עברית, מאי 2020",
     },
-    videos: [],
+    videos: [
+      {
+        label: "סרטון הדרכה",
+        url: "https://www.youtube.com/watch?v=_6OtgN9fB0I",
+        detail: "מרכז רפואי וולפסון · עברית",
+      },
+    ],
     extraSources: [],
-    missing: "לא נמצא סרטון רשמי למנופור 75 (לסרטוני פרינג יש רק מולטידוז).",
+    missing: "לא נבדק איזו גרסת מנופור מוצגת בסרטון של וולפסון.",
   },
   {
     id: "orgalutran",
@@ -139,11 +159,17 @@ export const injectionGuides: InjectionGuide[] = [
       url: "https://mohpublic.z6.web.core.windows.net/IsraelDrugs/Rishum01_1_1162301221.pdf",
       detail: "אנגלית, ספטמבר 2021 — עלון בעברית לא אותר בבדיקה, אפשר לחפש במאגר",
     },
-    videos: [],
+    videos: [
+      {
+        label: "סרטון הדרכה",
+        url: "https://www.youtube.com/watch?v=qDy1G5gSfjk",
+        detail: "מרכז רפואי וולפסון · עברית",
+      },
+    ],
     extraSources: [
       { label: "Orgalutran — מידע רשמי של EMA", url: "https://www.ema.europa.eu/en/medicines/human/EPAR/orgalutran", detail: "אנגלית" },
     ],
-    missing: "לא נמצא סרטון הדרכה רשמי.",
+    missing: "לא נבדק אם המזרק בסרטון זהה בדיוק לשלך — ההוראות הקובעות הן העלון וההדרכה ביחידה.",
   },
   {
     id: "cetrotide",
@@ -158,11 +184,17 @@ export const injectionGuides: InjectionGuide[] = [
       url: "https://mohpublic.z6.web.core.windows.net/IsraelDrugs/Rishum01_19_681239324.pdf",
       detail: "עברית, נובמבר 2024",
     },
-    videos: [],
+    videos: [
+      {
+        label: "סרטון הדרכה",
+        url: "https://www.youtube.com/watch?v=1YK_5NJV76M",
+        detail: "הרצליה מדיקל סנטר · Merck · עברית",
+      },
+    ],
     extraSources: [
       { label: "Cetrotide — מידע רשמי של EMA", url: "https://www.ema.europa.eu/en/medicines/human/EPAR/cetrotide", detail: "אנגלית" },
     ],
-    missing: "לא נמצא סרטון רשמי בישראל. הסרטון של היצרן בארה״ב לא נוסף כי לא אומת שהערכה זהה.",
+    missing: "לא נבדק אם הערכה בסרטון זהה בדיוק לשלך — ההוראות הקובעות הן העלון וההדרכה ביחידה.",
   },
   {
     id: "ovitrelle",
@@ -177,11 +209,17 @@ export const injectionGuides: InjectionGuide[] = [
       url: "https://mohpublic.z6.web.core.windows.net/IsraelDrugs/Rishum01_7_79557723.pdf",
       detail: "עברית; העלון מ-2021, הוראות העט מ-2023",
     },
-    videos: [],
+    videos: [
+      {
+        label: "סרטון הדרכה",
+        url: "https://www.youtube.com/watch?v=P8v9xDF2lpU",
+        detail: "הרצליה מדיקל סנטר · Merck · עברית",
+      },
+    ],
     extraSources: [
       { label: "Ovitrelle — מידע רשמי של EMA", url: "https://www.ema.europa.eu/en/medicines/human/EPAR/ovitrelle", detail: "אנגלית" },
     ],
-    missing: "לא נמצא סרטון רשמי שאפשר היה לאמת את התאמתו לעט/למזרק שקיבלת.",
+    missing: "לא נבדק אם הסרטון מציג עט או מזרק — ההוראות הקובעות הן העלון וההדרכה ביחידה.",
   },
 ];
 

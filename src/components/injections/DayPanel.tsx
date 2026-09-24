@@ -19,6 +19,7 @@ import {
 } from "@/lib/injectionJournal";
 import MedForm from "./MedForm";
 import MonitoringForm, { MonitoringView } from "./MonitoringForm";
+import { VideoButton } from "./GuidesLibrary";
 
 interface DayPanelProps {
   cycle: JournalCycle;
@@ -250,9 +251,10 @@ function MedRow({
       {med.note && <p className="mt-2 whitespace-pre-line rounded-lg bg-mist-50 px-2.5 py-1.5 text-xs text-ink/70">{med.note}</p>}
 
       <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-mist-100 pt-2">
+        {guide?.videos[0] && <VideoButton url={guide.videos[0].url} label="סרטון הזרקה" detail={guide.videos[0].detail} size="sm" />}
         <button type="button" onClick={onOpenGuide} className="inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline">
           <BookOpen className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
-          איך מזריקים?{guide ? "" : " (כל המדריכים)"}
+          {guide ? "עלון" : "איך מזריקים? (כל המדריכים)"}
         </button>
         <button type="button" onClick={onEdit} className="inline-flex items-center gap-1 text-xs font-semibold text-ink/60 hover:text-ink">
           <Pencil className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />

@@ -1,7 +1,7 @@
 "use client";
 
-import { ChevronDown, ExternalLink, FileText, PlayCircle } from "lucide-react";
-import { GUIDES_CHECKED_AT, MOH_DRUG_INDEX_URL, injectionGuides, type InjectionGuide } from "@/data/injectionGuides";
+import { ChevronDown, FileText, Play } from "lucide-react";
+import { MOH_DRUG_INDEX_URL, injectionGuides, type InjectionGuide } from "@/data/injectionGuides";
 
 interface GuidesLibraryProps {
   /** מדריכים של תרופות שהוזנו ביומן — מוצגים ראשונים */
@@ -29,8 +29,8 @@ export default function GuidesLibrary({ myGuideIds, openGuideId, onToggleGuide, 
         איך מזריקים?
       </h2>
       <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-ink/65">
-        כאן אפשר לזהות את התכשיר שקיבלת ולהגיע לעלון הרשמי שלו. את ההכנה, ההזרקה והאחסון עושים לפי העלון ולפי
-        ההדרכה ביחידה. שאלה על שינוי בהנחיות או על זריקה שלא בוצעה בזמן — פני ליחידה המטפלת.
+        סרטוני הדרכה בעברית מבתי חולים ומהיצרנים בישראל, והעלון הרשמי של כל תרופה. ודאי שהתכשיר בסרטון זהה לשלך —
+        ההוראות הקובעות הן העלון וההדרכה ביחידה. שאלה על שינוי בהנחיות או על זריקה שלא בוצעה בזמן — פני ליחידה המטפלת.
       </p>
 
       {mine.length > 0 && (
@@ -67,8 +67,7 @@ export default function GuidesLibrary({ myGuideIds, openGuideId, onToggleGuide, 
       </div>
 
       <p className="mt-4 text-xs leading-relaxed text-ink/55">
-        קישורי העלונים נבדקו ב־{GUIDES_CHECKED_AT} מול מאגר התרופות של משרד הבריאות. עלון עדכני יותר, או עלון לתכשיר
-        שלא מופיע כאן, אפשר למצוא ב
+        תרופה שלא מופיעה כאן? את העלון שלה אפשר למצוא ב
         <a href={MOH_DRUG_INDEX_URL} target="_blank" rel="noreferrer" className="font-semibold text-teal-700 hover:underline">
           מאגר התרופות של משרד הבריאות
         </a>
@@ -78,84 +77,58 @@ export default function GuidesLibrary({ myGuideIds, openGuideId, onToggleGuide, 
   );
 }
 
-function GuideCard({ guide, open, onToggle }: { guide: InjectionGuide; open: boolean; onToggle: () => void }) {
-  const panelId = `guide-panel-${guide.id}`;
+export function VideoButton({ url, label, detail, size = "md" }: { url: string; label: string; detail?: string; size?: "sm" | "md" }) {
   return (
-    <div id={`guide-${guide.id}`} className="scroll-mt-24 rounded-2xl border-2 border-mist-200 bg-white lg:scroll-mt-8" data-testid="guide-card" data-guide={guide.id}>
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={open}
-        aria-controls={panelId}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-right"
-      >
-        <span className="min-w-0">
-          <span className="block font-bold text-ink">
-            {guide.name} <span className="font-semibold text-ink/55">({guide.latinName})</span>
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className={`inline-flex items-center gap-2 rounded-full bg-warm-500 font-bold text-ink shadow-sm transition-colors hover:bg-warm-300 ${
+        size === "sm" ? "min-h-[34px] px-3 text-xs" : "min-h-[44px] px-4 text-sm"
+      }`}
+      data-testid="video-button"
+      title={detail}
+    >
+      <span className={`flex items-center justify-center rounded-full bg-white/90 ${size === "sm" ? "h-5 w-5" : "h-7 w-7"}`} aria-hidden="true">
+        <Play className={`fill-current text-warm-500 ${size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5"}`} strokeWidth={2.5} />
+      </span>
+      {label}
+    </a>
+  );
+}
+
+/**
+ * כרטיס מדריך מצומצם: שם התרופה, כפתור סרטון ירוק ובולט (הדבר שמחפשים),
+ * וקישור לעלון לצרכן של משרד הבריאות. בלי פרטים טכניים — הם בעלון.
+ */
+function GuideCard({ guide, open }: { guide: InjectionGuide; open: boolean; onToggle: () => void }) {
+  return (
+    <div
+      id={`guide-${guide.id}`}
+      className={`scroll-mt-24 rounded-2xl border-2 bg-white p-4 lg:scroll-mt-8 ${open ? "border-warm-500" : "border-mist-200"}`}
+      data-testid="guide-card"
+      data-guide={guide.id}
+    >
+      <p className="font-bold text-ink">
+        {guide.name} <span className="font-semibold text-ink/50">({guide.latinName})</span>
+      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {guide.videos.map((v) => (
+          <span key={v.url} className="inline-flex flex-col items-start gap-0.5">
+            <VideoButton url={v.url} label={v.label} />
+            {v.detail && <span className="pr-2 text-[11px] text-ink/50">{v.detail}</span>}
           </span>
-          <span className="block text-xs text-ink/60">{guide.form}</span>
-        </span>
-        <ChevronDown className={`h-5 w-5 shrink-0 text-ink/50 transition-transform ${open ? "rotate-180" : ""}`} strokeWidth={2.25} />
-      </button>
-      <div id={panelId} hidden={!open} className="space-y-3 border-t border-mist-100 px-4 pb-4 pt-3 text-sm text-ink/75">
-        <dl className="grid gap-1.5 sm:grid-cols-[8rem_1fr]">
-          <dt className="font-semibold text-ink/55">חומר פעיל</dt>
-          <dd>{guide.activeIngredient}</dd>
-          <dt className="font-semibold text-ink/55">צורת התכשיר</dt>
-          <dd>{guide.form}</dd>
-          {guide.strengths && (
-            <>
-              <dt className="font-semibold text-ink/55">חוזקים לפי העלון</dt>
-              <dd>
-                <bdi dir="ltr">{guide.strengths}</bdi> (לזיהוי האריזה בלבד — המינון שלך נקבע ביחידה)
-              </dd>
-            </>
-          )}
-        </dl>
-
-        <div className="flex flex-col gap-2">
-          <a
-            href={guide.leaflet.url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-start gap-2 rounded-xl bg-teal-50 px-3 py-2 font-semibold text-teal-700 hover:bg-teal-100"
-          >
-            <FileText className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden="true" />
-            <span>
-              {guide.leaflet.label}
-              {guide.leaflet.detail && <span className="block text-xs font-normal text-ink/60">{guide.leaflet.detail}</span>}
-            </span>
-          </a>
-          {guide.videos.map((v) => (
-            <a
-              key={v.url}
-              href={v.url}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-start gap-2 rounded-xl bg-mist-50 px-3 py-2 font-semibold text-ink hover:bg-mist-100"
-            >
-              <PlayCircle className="mt-0.5 h-4 w-4 shrink-0 text-teal-700" strokeWidth={2} aria-hidden="true" />
-              <span>
-                {v.label}
-                {v.detail && <span className="block text-xs font-normal text-ink/60">{v.detail}</span>}
-              </span>
-            </a>
-          ))}
-          {guide.extraSources.map((s) => (
-            <a key={s.url} href={s.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline">
-              {s.label}
-              {s.detail ? ` (${s.detail})` : ""}
-              <ExternalLink className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
-            </a>
-          ))}
-        </div>
-
-        <p className="text-xs leading-relaxed text-ink/55">
-          מקור: מאגר התרופות של משרד הבריאות{guide.extraSources.length ? " ו-EMA" : ""}
-          {guide.videos.length ? "; סרטון: אתר היצרן בישראל" : ""}. נבדק ב־{GUIDES_CHECKED_AT}.
-          {guide.missing ? ` ${guide.missing}` : ""}
-        </p>
+        ))}
       </div>
+      <a
+        href={guide.leaflet.url}
+        target="_blank"
+        rel="noreferrer"
+        className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-teal-700 hover:underline"
+      >
+        <FileText className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+        עלון לצרכן — משרד הבריאות
+      </a>
     </div>
   );
 }
