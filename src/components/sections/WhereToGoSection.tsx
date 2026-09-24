@@ -48,8 +48,8 @@ export default function WhereToGoSection({ progress }: WhereToGoSectionProps) {
             איפה כדאי לי לעשות?
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink/70 sm:text-base">
-            יש כמה דרכים לממן את התהליך, ולפעמים אותו מקום מציע כמה מהן. כאן אפשר להבין מה קיים, לראות מחירים
-            עם מקור, ולהשוות בין מקומות לפי המסלול שמתאים לך.
+            בחרי מסלול ואזור, ונציג את המקומות שמתאימים לך. מחיר מופיע רק כשפורסם במקור רשמי, ואפשר להשוות בין
+            שניים או שלושה מקומות.
           </p>
         </div>
         <div className="mt-4 flex justify-center lg:mt-0 lg:shrink-0 lg:justify-end">
@@ -70,8 +70,8 @@ export default function WhereToGoSection({ progress }: WhereToGoSectionProps) {
       </section>
 
       <section className="mt-6 text-xs leading-relaxed text-ink/55">
-        <p className="font-semibold text-ink/60">מקורות רשמיים עיקריים (נבדקו ב־23.9.2026):</p>
-        <p className="mt-0.5">המקור של כל מחיר מופיע בכרטיס המקום, תחת ״מה לברר, מקורות וזכאות״.</p>
+        <p className="font-semibold text-ink/60">מקורות רשמיים עיקריים (נבדקו ב־23–25.9.2026):</p>
+        <p className="mt-0.5">המקור של כל מחיר מופיע בכרטיס המקום, תחת ״פרטים ומקורות״.</p>
         <ul className="mt-2 space-y-1">
           {OFFICIAL_SOURCES.map((s) => (
             <li key={s.url}>

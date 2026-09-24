@@ -22,6 +22,17 @@ import type { SourceLink } from "./types";
  *  - נצרת: הרשומה המאוחדת לשלושה בתי חולים צומצמה לבית החולים האנגלי בלבד —
  *    זה המוסד היחיד שאותר לו פירוט IVF במקור שנבדק.
  *
+ * עדכון 25.9.2026 — בדיקה חוזרת מול העמודים הרשמיים (לפני עיצוב מחדש של העמוד):
+ *  - אושרו ללא שינוי: שמיר, וולפסון, שערי צדק, רמב״ם, הלל יפה, העמק, מכבי שלי,
+ *    כללית מושלם פלטינום, סכום לאומית זהב.
+ *  - מאיר: בעמוד היחידה אין מחיר — הוסר ה-7,000 ₪.
+ *  - שיבא: העמוד הראשי חסם בדיקה אוטומטית (403) — נשאר האימות מ-23.9.2026.
+ *    דף הקמפיין הרשמי של שיבא מציין 3,500 ₪ לטיפול ראשון לחברות כללית, מכבי
+ *    ומאוחדת "בכפוף לתנאי הזכות" — לכן ההסדר של כללית בשיבא סומן כמאומת.
+ *  - לאומית: בעמוד הזכאות לא מופיעה תקופת המתנה — נוסח מחדש.
+ *  - שערי צדק: נוסף מסלול מאוחדת שיא לפי עמוד היחידה (כ־4,500 ₪) — דורש בירור.
+ *  - מאוחדת שיא: התקנון לא נקרא במלואו בבדיקה — נשאר "דורש בירור".
+ *
  * כללים:
  *  - `priceAmount` (מספר) מוזן רק כשיש מחיר שפורסם במקור רשמי. המחשבון מחבר
  *    רק מחירים כאלה; כל השאר מוצג כ"מחיר בבירור" ולעולם לא נכנס לסכום.
@@ -101,6 +112,9 @@ function slug(name: string): string {
 }
 
 const CHECKED = "23.9.2026";
+/** נבדק שוב מול העמוד הרשמי ב-25.9.2026 */
+const RECHECKED = "25.9.2026";
+const SHEBA_CHECKED = CHECKED;
 
 /* ---------------------------------------------------------------------- */
 /* מקורות משותפים                                                          */
@@ -134,6 +148,16 @@ export const LEUMIT_PROVIDERS_SOURCE: SourceLink = {
 const SHEBA_SOURCE: SourceLink = {
   label: "שיבא — הקפאת ביציות",
   url: "https://www.sheba.co.il/pregnancy/fertility/eggs-freezing",
+};
+
+const SHEBA_FUNDS_SOURCE: SourceLink = {
+  label: "שיבא — שימור פוריות (דף הטבות הקופות)",
+  url: "https://lp.sheba.co.il/fertility-preservation",
+};
+
+const SZMC_SOURCE: SourceLink = {
+  label: "שערי צדק — שימור ביציות מבחירה",
+  url: "https://www.szmc.org.il/departments/obstetrics-and-gynecology/ivf/madrich-ivf/shimur-mbhira/",
 };
 
 /** קישורי "בדקי זכאות" לכל קופה — מוצגים רק ליד route קיים של אותה קופה */
@@ -177,7 +201,7 @@ function maccabiSheliRoute(unitSlug: string): CareRoute {
     medicationNotes: "תרופות הפריון אינן כלולות ב-3,500 ₪ ונרכשות בנפרד; ייתכנו הנחות במסגרת סל התרופות של מכבי זהב.",
     eligibilityNote: "בכפוף לגיל 31–38, ותק של 12 חודשים במכבי שלי, וזכאות בפועל. ההטבה לא קיימת במכבי זהב/כסף.",
     source: MACCABI_SHELI_SOURCE,
-    verifiedAt: CHECKED,
+    verifiedAt: RECHECKED,
     verificationStatus: "verified",
   };
 }
@@ -201,7 +225,7 @@ function clalitMushlamRoute(unitSlug: string, caveat = CLALIT_CAVEAT): CareRoute
     medicationNotes: "התרופות אינן כלולות ב-3,500 ₪.",
     eligibilityNote: "בכפוף לגיל 30–37 (עד גיל 38), ותק במושלם פלטינום, וזכאות בפועל.",
     source: CLALIT_MUSHLAM_SOURCE,
-    verifiedAt: CHECKED,
+    verifiedAt: RECHECKED,
     verificationStatus: "needsVerification",
     caveat,
   };
@@ -215,7 +239,6 @@ function leumitGoldRoute(unitSlug: string): CareRoute {
     requiredPlan: "לאומית זהב",
     ageMin: 30,
     ageMax: 37,
-    waitingPeriodMonths: 12,
     priceAmount: 3491,
     priceBasis: "לטיפול",
     pricePerCycle: "3,491 ₪",
@@ -223,10 +246,11 @@ function leumitGoldRoute(unitSlug: string): CareRoute {
     storageYears: 5,
     medicationsIncluded: false,
     medicationNotes: "התרופות משולמות בנפרד, לפי תעריף סל הבריאות.",
-    eligibilityNote: "בכפוף לגיל 30–37 (עד גיל 38), 12 חודשי המתנה בלאומית זהב (לפי עדכון יולי 2026), וזכאות בפועל.",
+    eligibilityNote:
+      "בכפוף לגיל 30–37 (עד יום ההולדת ה-38) וזכאות בפועל. תקופת ההמתנה לא מופיעה בעמוד הזכאות (בעדכון הרבדים מיולי 2026 הופיעו 12 חודשים) — יש לוודא מול לאומית.",
     approvalNote: "נדרשת הפניה מרופא/ת נשים בלאומית והבקשה עוברת לאישור מראש של הקופה.",
     source: LEUMIT_GOLD_SOURCE,
-    verifiedAt: CHECKED,
+    verifiedAt: RECHECKED,
     verificationStatus: "verified",
     caveat:
       "עמוד הזכאות של לאומית מציין 3,491 ₪ לטיפול, ועמוד עדכון הרבדים מיולי 2026 מציין 3,500 ₪ — כדאי לוודא את הסכום המדויק מול הקופה. היחידה מופיעה ברשימת נותני השירות של לאומית.",
@@ -256,7 +280,7 @@ function meuhedetOnSheba(): CareRoute {
     verifiedAt: CHECKED,
     verificationStatus: "needsVerification",
     caveat:
-      "המחיר (3,500 ₪) מופיע בתקנון מאוחדת שיא מספטמבר 2026 (סעיף 16.9, לפי קובץ המיפוי); בעמוד ותיק של מאוחדת עדיין מופיע 4,533 ₪. ההסדר עם שיבא עצמו לא אומת במקור רשמי — יש לאשר מול מאוחדת.",
+      "שיבא מציינת בדף הרשמי שלה 3,500 ₪ לטיפול ראשון גם לחברות מאוחדת, בכפוף לתנאי הזכות. את התקנון של מאוחדת שיא לא הצלחנו לקרוא במלואו, ובעמוד שערי צדק מופיע סכום אחר למאוחדת (כ־4,500 ₪) — יש לאשר את הסכום מול מאוחדת.",
   };
 }
 
@@ -316,7 +340,7 @@ const publicUnits: CareUnit[] = [
         priceAmount: 6500,
         priceBasis: "למחזור ראשון",
         pricePerCycle: "6,500 ₪",
-        verifiedAt: CHECKED,
+        verifiedAt: RECHECKED,
         verificationStatus: "verified",
         caveat:
           "מחיר לשני סבבים ודמי פתיחת תיק לא אותרו באתר היחידה — יש לברר. באתר מופיע גם נתון ישן של 4,000 ₪ למאוחדת, שאינו עדכני.",
@@ -341,15 +365,17 @@ const publicUnits: CareUnit[] = [
         priceExtra: "14,000 ₪ לשני מחזורים",
         storageYears: 5,
         included: "שאיבה, הקפאה ושמירה לחמש שנים",
-        verifiedAt: CHECKED,
+        verifiedAt: SHEBA_CHECKED,
         verificationStatus: "verified",
         source: SHEBA_SOURCE,
       }),
       maccabiSheliRoute(shebaId),
-      clalitMushlamRoute(
-        shebaId,
-        "כללית מפרסמת 3,500 ₪ למחזור \"בבתי החולים שבהסדר\", ושיבא מציינת זכאות לפי תנאי כללית מושלם — אבל רשימה רשמית של כללית לא אותרה. יש לאשר מול כללית."
-      ),
+      {
+        ...clalitMushlamRoute(shebaId, undefined),
+        verificationStatus: "verified",
+        caveat:
+          "שיבא מציינת בדף הרשמי שלה השתתפות עצמית של 3,500 ₪ לטיפול ראשון לחברות כללית, \"בכפוף לתנאי הזכות של קופות החולים\". מכסת המחזורים — לפי תקנון כללית.",
+      },
       meuhedetOnSheba(),
       leumitGoldRoute(shebaId),
     ],
@@ -367,7 +393,7 @@ const publicUnits: CareUnit[] = [
         priceAmount: 7000,
         priceBasis: "לשאיבה לשימור",
         pricePerCycle: "7,000 ₪",
-        verifiedAt: CHECKED,
+        verifiedAt: RECHECKED,
         verificationStatus: "verified",
         caveat: "בעמוד היחידה יש גם מידע ישן על מגבלות הטיפול — אין להסיק ממנו תנאי זכאות עדכניים.",
         source: { label: "וולפסון — שימור ביציות", url: "https://www.nashim.net/?CategoryID=1142" },
@@ -405,17 +431,33 @@ const publicUnits: CareUnit[] = [
         priceAmount: 8000,
         priceBasis: "למחזור טיפול",
         pricePerCycle: "8,000 ₪",
-        priceExtra: "345 ₪ דמי פתיחת תיק, מתקזזים אם ממשיכים לטיפול. מחירי חבילות למספר מחזורים לא אותרו.",
+        priceExtra: "פתיחת תיק: 345 ₪, או טופס התחייבות (טופס 17) מהקופה. מחירי חבילות למספר מחזורים לא אותרו.",
         storageYears: 5,
-        included: "גירוי שחלתי, מעקב זקיקים, שאיבה והקפאה; 5 שנות אחסון ראשונות ללא עלות נוספת",
-        verifiedAt: CHECKED,
+        included: "גירוי שחלתי, מעקב זקיקים (אולטרסאונד ובדיקות דם), שאיבה בהרדמה כללית והקפאה; 5 שנות אחסון ראשונות ללא עלות נוספת",
+        medicationNotes: "העמוד לא מציין אם התרופות כלולות — כדאי לברר.",
+        verifiedAt: RECHECKED,
         verificationStatus: "verified",
         caveat: "אחרי 5 שנים עלות האחסון נקבעת לפי משרד הבריאות.",
-        source: {
-          label: "שערי צדק — שימור ביציות מבחירה",
-          url: "https://www.szmc.org.il/departments/obstetrics-and-gynecology/ivf/madrich-ivf/shimur-mbhira/",
-        },
+        source: SZMC_SOURCE,
       }),
+      {
+        id: `${shaareiZedekId}-meuhedet`,
+        fundingType: "healthFundArrangement",
+        healthFund: "מאוחדת",
+        requiredPlan: "מאוחדת שיא",
+        priceAmount: 4500,
+        priceApprox: true,
+        priceBasis: "למחזור טיפול",
+        pricePerCycle: "כ־4,500 ₪",
+        medicationsIncluded: false,
+        medicationNotes: "הנחה של 50% על התרופות, לפי עמוד היחידה.",
+        eligibilityNote: "בכפוף לתנאי מאוחדת שיא (גיל, ותק וזכאות בפועל).",
+        source: SZMC_SOURCE,
+        verifiedAt: RECHECKED,
+        verificationStatus: "needsVerification",
+        caveat:
+          "הסכום מופיע בעמוד של שערי צדק ולא בעמוד של מאוחדת. תקנון מאוחדת שיא לא נקרא במלואו בבדיקה — יש לאשר את הסכום ואת ההסדר מול מאוחדת.",
+      },
       clalitMushlamRoute(shaareiZedekId),
     ],
   },
@@ -453,7 +495,8 @@ const publicUnits: CareUnit[] = [
         priceAmount: 6500,
         priceBasis: "למחזור גירוי אחד",
         pricePerCycle: "6,500 ₪",
-        verifiedAt: CHECKED,
+        included: "גירוי שחלתי, מעקב באולטרסאונד ובדיקות דם, שאיבה בהרדמה והקפאה",
+        verifiedAt: RECHECKED,
         verificationStatus: "verified",
         caveat: "בעמוד יש גם מידע ישן על מספר סבבים — אין להסיק ממנו תנאי זכאות עדכניים.",
         source: {
@@ -491,10 +534,9 @@ const publicUnits: CareUnit[] = [
     website: { label: "מאיר — היחידה להפריה חוץ גופית", url: "https://hospitals.clalit.co.il/meir/he/med/gyne/ivf/Pages/cons.aspx" },
     routes: [
       selfPay(meirId, {
-        pricePerCycle: "7,000 ₪ למחזור טיפול (מופיע בעמוד היחידה, מועד הפרסום לא ברור)",
-        verifiedAt: CHECKED,
+        verifiedAt: RECHECKED,
         verificationStatus: "needsVerification",
-        caveat: "מועד פרסום המחיר בעמוד היחידה אינו ברור — יש לקבל אישור מחיר עדכני לפני הסתמכות עליו.",
+        caveat: "בעמוד היחידה לא מופיע מחיר. יש לבקש מהיחידה מחיר למחזור, מה כלול, תרופות ואחסון.",
         source: { label: "מאיר — ייעוץ ושימור", url: "https://hospitals.clalit.co.il/meir/he/med/gyne/ivf/Pages/cons.aspx" },
       }),
       clalitMushlamRoute(meirId),
@@ -573,7 +615,7 @@ const publicUnits: CareUnit[] = [
         notIncluded: "תרופות לגירוי שחלתי",
         medicationsIncluded: false,
         medicationNotes: "תרופות לגירוי שחלתי אינן כלולות.",
-        verifiedAt: CHECKED,
+        verifiedAt: RECHECKED,
         verificationStatus: "verified",
         caveat: "בתיאור המקוצר של העמוד מופיע גם 6,500 ₪ — כדאי לוודא טלפונית (04-7744750) את המחיר העדכני.",
         source: { label: "הלל יפה — שימור הפוריות", url: "https://hymc.org.il/?ArticleID=8603&CategoryID=2253" },
@@ -609,7 +651,7 @@ const publicUnits: CareUnit[] = [
         pricePerCycle: "כ־6,300 ₪",
         medicationsIncluded: false,
         medicationNotes: "התרופות אינן כלולות.",
-        verifiedAt: CHECKED,
+        verifiedAt: RECHECKED,
         verificationStatus: "verified",
         caveat: "היחידה מפרסמת מחיר מקורב — לא מחיר סופי או כולל.",
         source: {
