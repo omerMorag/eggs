@@ -1,4 +1,4 @@
-import { BookOpen, FlaskConical, Heart, ListChecks, MapPin, Percent } from "lucide-react";
+import { BookOpen, FlaskConical, Heart, ListChecks, MapPin, Percent, Syringe } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export type SectionId =
@@ -7,6 +7,7 @@ export type SectionId =
   | "where-to-go"
   | "my-chances"
   | "guides"
+  | "injections"
   | "cost-estimator"
   | "stories"
   | "admin-stories";
@@ -27,6 +28,7 @@ export const navSections: NavSectionDef[] = [
   { id: "tests", label: "הבדיקות שלי", icon: FlaskConical },
   { id: "where-to-go", label: "איפה כדאי לעשות?", icon: MapPin },
   { id: "my-chances", label: "מה הסיכוי שלי?", icon: Percent },
+  { id: "injections", label: "תקופת הזריקות", icon: Syringe },
   { id: "stories", label: "סיפורים מהמקפיא", icon: Heart },
   { id: "guides", label: "יום השאיבה", icon: BookOpen },
 ];
