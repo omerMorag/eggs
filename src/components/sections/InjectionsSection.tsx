@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { signIn } from "next-auth/react";
-import { CalendarDays, CalendarPlus, ChevronDown, Cloud, CloudOff, Info, LifeBuoy, Settings2 } from "lucide-react";
+import { CalendarDays, CalendarPlus, ChevronDown, Cloud, CloudOff, Info, LayoutList, LifeBuoy, Settings2, Table2 } from "lucide-react";
 import HenIllustration from "@/components/hens/HenIllustration";
 import DayCard from "@/components/injections/DayCard";
 import GuidesLibrary from "@/components/injections/GuidesLibrary";
+import JournalTable from "@/components/injections/JournalTable";
 import { useInjectionJournal } from "@/lib/useInjectionJournal";
 import {
   cycleMedGuideIds,
@@ -19,6 +20,8 @@ import {
 
 const inputCls =
   "mt-1 block w-full rounded-xl border border-mist-200 bg-white px-3 py-2.5 text-base text-ink focus:border-teal-400 focus:outline-none sm:text-sm";
+
+const VIEW_KEY = "makpiot:injection-journal:view";
 
 /** שם אוטומטי לסבב — אפשר לשנות ב"אפשרויות נוספות" */
 function autoLabel(existing: number): string {
@@ -38,8 +41,21 @@ export default function InjectionsSection() {
   const [showAllGuides, setShowAllGuides] = useState(false);
   const [guidesOpen, setGuidesOpen] = useState(false);
   const [extraDate, setExtraDate] = useState<string | null>(null);
+  const [view, setView] = useState<"cards" | "table">("cards");
+  const [showFuture, setShowFuture] = useState(false);
 
-  useEffect(() => setToday(todayISO()), []);
+  useEffect(() => {
+    setToday(todayISO());
+    try {
+      if (localStorage.getItem(VIEW_KEY) === "table") setView("table");
+    } catch {}
+  }, []);
+  const changeView = (v: "cards" | "table") => {
+    setView(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {}
+  };
   useEffect(() => setExtraDate(null), [activeCycle?.id]);
 
   const myGuideIds = useMemo(() => cycleMedGuideIds(activeCycle), [activeCycle]);
@@ -70,6 +86,33 @@ export default function InjectionsSection() {
     if (extraDate && extraDate !== topDate && !list.includes(extraDate)) list.push(extraDate);
     return list.sort((a, b) => b.localeCompare(a));
   }, [activeCycle, topDate, extraDate]);
+  // ימים עתידיים (למשל אחרי "לכמה ימים") — מקופלים, מהקרוב לרחוק
+  const futureDates = useMemo(() => otherDates.filter((d) => d > topDate).reverse(), [otherDates, topDate]);
+  const pastDates = useMemo(() => otherDates.filter((d) => d < topDate), [otherDates, topDate]);
+
+  const goToDay = (d: string) => {
+    changeView("cards");
+    setExtraDate(d);
+    if (d > topDate) setShowFuture(true);
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() =>
+        document.querySelector(`[data-testid="day-card"][data-date="${d}"]`)?.scrollIntoView({ block: "start" }),
+      ),
+    );
+  };
+
+  const renderCard = (d: string) =>
+    activeCycle && (
+      <DayCard
+        key={`${activeCycle.id}-${d}`}
+        cycle={activeCycle}
+        date={d}
+        today={today}
+        onUpdateCycle={api.updateActiveCycle}
+        onOpenGuide={openGuide}
+        startEditing={d === extraDate}
+      />
+    );
 
   return (
     <div className="print-stack animate-fadeUp">
@@ -100,47 +143,67 @@ export default function InjectionsSection() {
         <>
           <CycleBar api={api} cycle={activeCycle} cycles={journal.cycles} />
 
-          {/* 2. היומן — כרטיס לכל יום */}
+          {/* 2. היומן — כרטיס לכל יום, או טבלה של כל התקופה */}
           <section aria-labelledby="journal-title" className="mt-5">
-            <h2 id="journal-title" className="sr-only">
-              היומן שלי
-            </h2>
-            <div className="space-y-4" data-testid="day-cards">
-              <DayCard
-                key={`${activeCycle.id}-${topDate}`}
-                cycle={activeCycle}
-                date={topDate}
-                today={today}
-                onUpdateCycle={api.updateActiveCycle}
-                onOpenGuide={openGuide}
-              />
-
-              <AddDay
-                cycle={activeCycle}
-                taken={[topDate, ...otherDates]}
-                onPick={(d) => {
-                  setExtraDate(d);
-                  requestAnimationFrame(() =>
-                    document.querySelector(`[data-testid="day-card"][data-date="${d}"]`)?.scrollIntoView({ block: "center" }),
-                  );
-                }}
-              />
-
-              {otherDates.length > 0 && (
-                <h3 className="pt-2 text-sm font-bold text-ink/60">ימים קודמים</h3>
-              )}
-              {otherDates.map((d) => (
-                <DayCard
-                  key={`${activeCycle.id}-${d}`}
-                  cycle={activeCycle}
-                  date={d}
-                  today={today}
-                  onUpdateCycle={api.updateActiveCycle}
-                  onOpenGuide={openGuide}
-                  startEditing={d === extraDate}
-                />
-              ))}
+            <div className="flex items-center justify-between gap-3">
+              <h2 id="journal-title" className="font-sans text-lg font-extrabold text-ink sm:text-xl">
+                היומן שלי
+              </h2>
+              <div className="no-print flex gap-1 rounded-full bg-mist-100 p-1" role="group" aria-label="תצוגת היומן">
+                {(
+                  [
+                    ["cards", "ימים", LayoutList],
+                    ["table", "טבלה", Table2],
+                  ] as const
+                ).map(([v, text, Icon]) => (
+                  <button
+                    key={v}
+                    type="button"
+                    aria-pressed={view === v}
+                    onClick={() => changeView(v)}
+                    className={`inline-flex min-h-[34px] items-center gap-1 rounded-full px-3 text-xs font-bold transition-colors ${
+                      view === v ? "bg-white text-ink shadow-sm" : "text-ink/55 hover:text-ink"
+                    }`}
+                    data-testid={`view-${v}`}
+                  >
+                    <Icon className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden="true" />
+                    {text}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {view === "table" ? (
+              <div className="mt-3">
+                <JournalTable cycle={activeCycle} today={today} onOpenDay={goToDay} />
+                <p className="mt-2 text-xs text-ink/50">כל ערך מוצג עם היחידה שהוזנה. לחיצה על ״פתיחה״ מעבירה לכרטיס של היום.</p>
+              </div>
+            ) : (
+              <div className="mt-3 space-y-4" data-testid="day-cards">
+                {renderCard(topDate)}
+
+                {futureDates.length > 0 && (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setShowFuture((v) => !v)}
+                      aria-expanded={showFuture}
+                      className="inline-flex items-center gap-1.5 text-sm font-bold text-ink/60 hover:text-ink"
+                      data-testid="future-toggle"
+                    >
+                      <ChevronDown className={`h-4 w-4 transition-transform ${showFuture ? "rotate-180" : ""}`} strokeWidth={2.5} aria-hidden="true" />
+                      הימים הבאים ({futureDates.length})
+                    </button>
+                    {showFuture && <div className="mt-3 space-y-4">{futureDates.map(renderCard)}</div>}
+                  </div>
+                )}
+
+                <AddDay cycle={activeCycle} taken={[topDate, ...otherDates]} onPick={goToDay} />
+
+                {pastDates.length > 0 && <h3 className="pt-2 text-sm font-bold text-ink/60">ימים קודמים</h3>}
+                {pastDates.map(renderCard)}
+              </div>
+            )}
           </section>
         </>
       )}

@@ -367,3 +367,74 @@ export function setDayMeds(cycle: JournalCycle, iso: string, meds: MedEntry[]): 
 export function setDayMonitoring(cycle: JournalCycle, iso: string, monitoring: MonitoringResult | undefined): JournalCycle {
   return withDay(cycle, iso, (day) => ({ ...day, monitoring, hadCheckup: monitoring ? true : undefined }));
 }
+
+/* ---------------------------- "לכמה ימים" ---------------------------- */
+
+export const MAX_SERIES_DAYS = 30;
+
+/** מיקום היום בתוך סדרה ("יום 2 מתוך 5"), או undefined אם אין סדרה של יותר מיום */
+export function seriesInfo(cycle: JournalCycle, iso: string, seriesId?: string): { index: number; total: number } | undefined {
+  if (!seriesId) return undefined;
+  const dates = Object.keys(cycle.days)
+    .filter((d) => cycle.days[d].meds.some((m) => m.seriesId === seriesId))
+    .sort();
+  if (dates.length < 2) return undefined;
+  const index = dates.indexOf(iso);
+  return index < 0 ? undefined : { index: index + 1, total: dates.length };
+}
+
+/** כמה ימים נשארו בסדרה, כולל היום (ברירת המחדל של "כמה ימים" בעריכה) */
+export function seriesRemaining(cycle: JournalCycle, iso: string, seriesId?: string): number {
+  if (!seriesId) return 1;
+  const n = Object.keys(cycle.days).filter((d) => d >= iso && cycle.days[d].meds.some((m) => m.seriesId === seriesId)).length;
+  return Math.max(1, n);
+}
+
+export interface DayMedRow {
+  entry: MedEntry;
+  /** לכמה ימים (כולל היום) — 1 = רק היום */
+  days: number;
+}
+
+/**
+ * שמירת הזריקות של יום + "לכמה ימים": כל שורה עם יותר מיום אחד נכתבת גם
+ * לימים הבאים (רשומה נפרדת לכל יום, seriesId משותף, לא מסומנת "הזרקתי").
+ * קיצור הסדרה מוחק רק רשומות עתידיות שעוד לא סומנו. רשומות שסומנו לא משתנות.
+ */
+export function saveDayMeds(cycle: JournalCycle, iso: string, rows: DayMedRow[]): JournalCycle {
+  const prepared = rows.map((r) => {
+    const days = Math.max(1, Math.min(MAX_SERIES_DAYS, Math.round(r.days) || 1));
+    const entry = days > 1 && !r.entry.seriesId ? { ...r.entry, seriesId: newId() } : r.entry;
+    return { entry, days };
+  });
+  const before = new Map(getDay(cycle, iso).meds.map((m) => [m.id, m]));
+  let next = setDayMeds(cycle, iso, prepared.map((r) => r.entry));
+  for (const { entry, days } of prepared) {
+    const sid = entry.seriesId;
+    if (!sid) continue;
+    // שינוי אורך בלבד לא דורס מינון שעודכן בימים הבאים; שינוי שם/מינון כן חל עליהם
+    const prev = before.get(entry.id);
+    const changed = !prev || prev.name !== entry.name || prev.dose !== entry.dose || prev.unit !== entry.unit;
+    const last = addDays(iso, days - 1);
+    // הארכה / עדכון
+    for (let i = 1; i < days; i += 1) {
+      const date = addDays(iso, i);
+      next = withDay(next, date, (day) => {
+        const existing = day.meds.find((m) => m.seriesId === sid);
+        if (existing) {
+          return existing.done || !changed
+            ? day
+            : { ...day, meds: day.meds.map((m) => (m.id === existing.id ? { ...m, name: entry.name, guideId: entry.guideId, dose: entry.dose, unit: entry.unit } : m)) };
+        }
+        const copy: MedEntry = { id: newId(), seriesId: sid, name: entry.name, guideId: entry.guideId, dose: entry.dose, unit: entry.unit, kind: "daily", done: false };
+        return { ...day, meds: [...day.meds, copy] };
+      });
+    }
+    // קיצור
+    for (const date of Object.keys(next.days)) {
+      if (date <= last) continue;
+      next = withDay(next, date, (day) => ({ ...day, meds: day.meds.filter((m) => m.seriesId !== sid || m.done) }));
+    }
+  }
+  return next;
+}

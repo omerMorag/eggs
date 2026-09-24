@@ -13,7 +13,10 @@ import {
   newId,
   nowHHMM,
   previousMedsDay,
-  setDayMeds,
+  saveDayMeds,
+  seriesInfo,
+  seriesRemaining,
+  type DayMedRow,
   setDayMonitoring,
   setMedDone,
   type BloodValue,
@@ -59,7 +62,7 @@ export default function DayCard({ cycle, date, today, onUpdateCycle, onOpenGuide
 
   return (
     <article
-      className="rounded-3xl border-2 border-mist-200 bg-white p-4 shadow-card sm:p-5"
+      className="scroll-mt-24 rounded-3xl border-2 border-mist-200 bg-white p-4 shadow-card sm:p-5 lg:scroll-mt-8"
       data-testid="day-card"
       data-date={date}
       aria-labelledby={`day-${date}-title`}
@@ -96,8 +99,8 @@ export default function DayCard({ cycle, date, today, onUpdateCycle, onOpenGuide
             date={date}
             meds={day.meds}
             onCancel={() => setEditMeds(false)}
-            onSave={(meds) => {
-              onUpdateCycle((c) => setDayMeds(c, date, meds));
+            onSave={(rows) => {
+              onUpdateCycle((c) => saveDayMeds(c, date, rows));
               setEditMeds(false);
               setSaved("הזריקות נשמרו");
             }}
@@ -109,6 +112,7 @@ export default function DayCard({ cycle, date, today, onUpdateCycle, onOpenGuide
                 <MedLine
                   key={m.id}
                   med={m}
+                  series={seriesInfo(cycle, date, m.seriesId)}
                   onToggle={(done) => onUpdateCycle((c) => setMedDone(c, date, m.id, done, done ? nowHHMM() : undefined))}
                   onOpenGuide={() => onOpenGuide(m.guideId ?? null)}
                 />
@@ -176,7 +180,17 @@ export default function DayCard({ cycle, date, today, onUpdateCycle, onOpenGuide
 
 /* ---------------------------- זריקות ---------------------------- */
 
-function MedLine({ med, onToggle, onOpenGuide }: { med: MedEntry; onToggle: (done: boolean) => void; onOpenGuide: () => void }) {
+function MedLine({
+  med,
+  series,
+  onToggle,
+  onOpenGuide,
+}: {
+  med: MedEntry;
+  series?: { index: number; total: number };
+  onToggle: (done: boolean) => void;
+  onOpenGuide: () => void;
+}) {
   const guide = med.guideId ? injectionGuides.find((g) => g.id === med.guideId) : undefined;
   const dose = doseText(med);
   return (
@@ -202,6 +216,11 @@ function MedLine({ med, onToggle, onOpenGuide }: { med: MedEntry; onToggle: (don
                 {dose}
               </bdi>
             </>
+          )}
+          {series && (
+            <span className="mr-2 inline-block rounded-full bg-warm-100 px-2 py-0.5 align-middle text-[11px] font-semibold text-ink/70" data-testid="series-chip">
+              יום {series.index} מתוך {series.total}
+            </span>
           )}
           {/* פרטים ישנים מוצגים רק אם הוזנו בעבר */}
           {(med.plannedTime || (med.done && med.doneTime)) && (
@@ -229,6 +248,7 @@ interface DraftRow {
   id?: string;
   name: string;
   dose: string;
+  days: number;
 }
 
 function MedsEditor({
@@ -241,14 +261,14 @@ function MedsEditor({
   cycle: JournalCycle;
   date: string;
   meds: MedEntry[];
-  onSave: (meds: MedEntry[]) => void;
+  onSave: (rows: DayMedRow[]) => void;
   onCancel: () => void;
 }) {
   const uid = useId();
   const [rows, setRows] = useState<DraftRow[]>(() =>
     meds.length
-      ? meds.map((m) => ({ key: m.id, id: m.id, name: m.name, dose: doseText(m) }))
-      : [{ key: newId(), name: "", dose: "" }]
+      ? meds.map((m) => ({ key: m.id, id: m.id, name: m.name, dose: doseText(m), days: seriesRemaining(cycle, date, m.seriesId) }))
+      : [{ key: newId(), name: "", dose: "", days: 1 }]
   );
   const prevDay = previousMedsDay(cycle, date);
 
@@ -257,14 +277,14 @@ function MedsEditor({
   const copyPrevious = () => {
     if (!prevDay) return;
     // העתקה רק של שם ומינון — בלי סימון "הזרקתי"
-    const copied = cycle.days[prevDay].meds.map((m) => ({ key: newId(), name: m.name, dose: doseText(m) }));
+    const copied = cycle.days[prevDay].meds.map((m) => ({ key: newId(), name: m.name, dose: doseText(m), days: 1 }));
     setRows((rs) => [...rs.filter((r) => r.name.trim() || r.dose.trim()), ...copied]);
   };
 
   const save = (e: React.FormEvent) => {
     e.preventDefault();
     const byId = new Map(meds.map((m) => [m.id, m]));
-    const out: MedEntry[] = [];
+    const out: DayMedRow[] = [];
     for (const r of rows) {
       const name = r.name.trim();
       const dose = r.dose.trim();
@@ -273,14 +293,17 @@ function MedsEditor({
       if (existing) {
         const sameDose = dose === doseText(existing);
         out.push({
-          ...existing,
-          name,
-          guideId: findGuideForName(name)?.id,
-          dose: sameDose ? existing.dose : dose || undefined,
-          unit: sameDose ? existing.unit : undefined,
+          entry: {
+            ...existing,
+            name,
+            guideId: findGuideForName(name)?.id,
+            dose: sameDose ? existing.dose : dose || undefined,
+            unit: sameDose ? existing.unit : undefined,
+          },
+          days: r.days,
         });
       } else {
-        out.push({ id: newId(), name, guideId: findGuideForName(name)?.id, dose: dose || undefined, kind: "daily", done: false });
+        out.push({ entry: { id: newId(), name, guideId: findGuideForName(name)?.id, dose: dose || undefined, kind: "daily", done: false }, days: r.days });
       }
     }
     onSave(out);
@@ -294,8 +317,8 @@ function MedsEditor({
         ))}
       </datalist>
       {rows.map((r, i) => (
-        <div key={r.key} className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 rounded-xl bg-white/60 p-2 ring-1 ring-inset ring-mist-200 sm:grid-cols-[minmax(0,1fr)_9rem_auto] sm:bg-transparent sm:p-0 sm:ring-0" data-testid="med-row-edit">
-          <label className="col-span-2 text-xs font-semibold text-ink/65 sm:col-span-1">
+        <div key={r.key} className="grid grid-cols-[minmax(0,1fr)_6.5rem_auto] items-end gap-2 rounded-xl bg-white/60 p-2 ring-1 ring-inset ring-mist-200 sm:grid-cols-[minmax(0,1fr)_8.5rem_6.5rem_auto] sm:bg-transparent sm:p-0 sm:ring-0" data-testid="med-row-edit">
+          <label className="col-span-3 text-xs font-semibold text-ink/65 sm:col-span-1">
             <span className={i === 0 ? "" : "sm:sr-only"}>שם התרופה</span>
             <input
               className={`${inputCls} mt-1`}
@@ -318,9 +341,24 @@ function MedsEditor({
               aria-label={`מינון כולל יחידה ${i + 1}`}
             />
           </label>
+          <label className="text-xs font-semibold text-ink/65">
+            <span className={i === 0 ? "" : "sm:sr-only"}>כמה ימים</span>
+            <select
+              className={`${inputCls} mt-1 px-2`}
+              value={r.days}
+              onChange={(e) => update(r.key, { days: Number(e.target.value) })}
+              aria-label={`כמה ימים ${i + 1}`}
+            >
+              {dayOptions(r.days).map((n) => (
+                <option key={n} value={n}>
+                  {n === 1 ? "רק היום" : `${n} ימים`}
+                </option>
+              ))}
+            </select>
+          </label>
           <button
             type="button"
-            onClick={() => setRows((rs) => (rs.length > 1 ? rs.filter((x) => x.key !== r.key) : [{ key: newId(), name: "", dose: "" }]))}
+            onClick={() => setRows((rs) => (rs.length > 1 ? rs.filter((x) => x.key !== r.key) : [{ key: newId(), name: "", dose: "", days: 1 }]))}
             aria-label={`הסרת השורה ${i + 1}`}
             className="mb-0.5 flex h-10 w-10 items-center justify-center rounded-full text-ink/40 hover:bg-mist-100 hover:text-ink/70"
           >
@@ -331,7 +369,7 @@ function MedsEditor({
       <div className="flex flex-wrap gap-x-4 gap-y-2 pt-1 text-sm">
         <button
           type="button"
-          onClick={() => setRows((rs) => [...rs, { key: newId(), name: "", dose: "" }])}
+          onClick={() => setRows((rs) => [...rs, { key: newId(), name: "", dose: "", days: 1 }])}
           className="inline-flex items-center gap-1 font-semibold text-teal-700 hover:underline"
         >
           <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
@@ -344,6 +382,11 @@ function MedsEditor({
           </button>
         )}
       </div>
+      {rows.some((r) => r.days > 1) && (
+        <p className="text-xs text-ink/55" data-testid="days-hint">
+          נוסיף את הזריקה גם לימים הבאים ביומן, עם אותו מינון. אם המינון ישתנה — אפשר לעדכן כל יום בנפרד.
+        </p>
+      )}
       <div className="flex flex-wrap gap-2 pt-1">
         <button type="submit" className="min-h-[42px] rounded-full bg-teal-600 px-6 text-sm font-bold text-ink hover:bg-teal-500">
           שמירה
@@ -354,6 +397,11 @@ function MedsEditor({
       </div>
     </form>
   );
+}
+
+function dayOptions(current: number): number[] {
+  const base = Array.from({ length: 14 }, (_, i) => i + 1);
+  return current > 14 ? [...base, current] : base;
 }
 
 /* ---------------------------- מעקב ---------------------------- */
