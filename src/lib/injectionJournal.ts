@@ -319,3 +319,51 @@ export function isValidJournal(v: unknown): v is InjectionJournal {
     return entries.length <= 120 && entries.every(([k, d]) => isValidISODate(k) && isValidDay(d));
   });
 }
+
+/* ---------------------------- יומן פשוט (כרטיס יום) ---------------------------- */
+
+/** שלוש הבדיקות המוכנות מראש במעקב. נשמרות כ-bloodValues רגילים (תאימות לאחור) */
+export const PRESET_TESTS = [
+  { id: "e2", name: "אסטרדיול (E2)", aliases: ["e2", "אסטרדיול", "estradiol"], units: ["pg/mL", "pmol/L"] },
+  { id: "p4", name: "פרוגסטרון", aliases: ["p4", "פרוגסטרון", "progesterone"], units: ["ng/mL", "nmol/L"] },
+  { id: "lh", name: "LH", aliases: ["lh"], units: ["IU/L", "mIU/mL"] },
+] as const;
+
+export type PresetTestId = (typeof PRESET_TESTS)[number]["id"];
+
+/** מאתר ערך קיים של בדיקה מוכנה מראש — לפי מזהה, או לפי שם ברשומות ישנות */
+export function findPresetValue(values: BloodValue[], preset: (typeof PRESET_TESTS)[number]): BloodValue | undefined {
+  return (
+    values.find((v) => v.id === preset.id) ??
+    values.find((v) => preset.aliases.some((a) => v.name.trim().toLowerCase().includes(a.toLowerCase())))
+  );
+}
+
+/** מינון + יחידה כטקסט אחד לתצוגה/עריכה ("150 IU") */
+export function doseText(m: Pick<MedEntry, "dose" | "unit">): string {
+  return [m.dose, m.unit].filter((x) => x && x.trim()).join(" ");
+}
+
+/** היום הקרוב ביותר לפני date שיש בו זריקות — ל"העתקה מהיום הקודם" */
+export function previousMedsDay(cycle: JournalCycle, date: string): string | undefined {
+  let best: string | undefined;
+  for (const [d, day] of Object.entries(cycle.days)) {
+    if (d < date && day.meds.length > 0 && (!best || d > best)) best = d;
+  }
+  return best;
+}
+
+/** כל התאריכים שיש בהם תיעוד, מהחדש לישן */
+export function recordedDates(cycle: JournalCycle): string[] {
+  return Object.keys(cycle.days).filter(isValidISODate).sort((a, b) => b.localeCompare(a));
+}
+
+/** מחליף את רשימת הזריקות של יום (שמירת כרטיס) */
+export function setDayMeds(cycle: JournalCycle, iso: string, meds: MedEntry[]): JournalCycle {
+  return withDay(cycle, iso, (day) => ({ ...day, meds }));
+}
+
+/** שומר/מוחק מעקב ליום */
+export function setDayMonitoring(cycle: JournalCycle, iso: string, monitoring: MonitoringResult | undefined): JournalCycle {
+  return withDay(cycle, iso, (day) => ({ ...day, monitoring, hadCheckup: monitoring ? true : undefined }));
+}

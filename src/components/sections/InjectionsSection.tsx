@@ -2,47 +2,50 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { signIn } from "next-auth/react";
-import { CalendarDays, Cloud, CloudOff, Info, LayoutList, Table2 } from "lucide-react";
+import { CalendarDays, CalendarPlus, ChevronDown, Cloud, CloudOff, Info, LifeBuoy, Settings2 } from "lucide-react";
 import HenIllustration from "@/components/hens/HenIllustration";
-import DayPanel from "@/components/injections/DayPanel";
-import { DayStrip, PeriodTable } from "@/components/injections/JournalViews";
+import DayCard from "@/components/injections/DayCard";
 import GuidesLibrary from "@/components/injections/GuidesLibrary";
 import { useInjectionJournal } from "@/lib/useInjectionJournal";
-import { cycleDates, cycleMedGuideIds, formatDateLong, todayISO, type JournalCycle } from "@/lib/injectionJournal";
+import {
+  cycleMedGuideIds,
+  dayNumber,
+  formatDateLong,
+  isValidISODate,
+  recordedDates,
+  todayISO,
+  type JournalCycle,
+} from "@/lib/injectionJournal";
 
 const inputCls =
-  "mt-1 block w-full rounded-lg border border-mist-200 bg-white px-3 py-2 text-sm text-ink focus:border-teal-400 focus:outline-none";
+  "mt-1 block w-full rounded-xl border border-mist-200 bg-white px-3 py-2.5 text-base text-ink focus:border-teal-400 focus:outline-none sm:text-sm";
+
+/** שם אוטומטי לסבב — אפשר לשנות ב"אפשרויות נוספות" */
+function autoLabel(existing: number): string {
+  return existing === 0 ? "הסבב שלי" : `סבב ${existing + 1}`;
+}
 
 /**
  * "תקופת הזריקות" — יומן אישי לתקופת הזריקות, מחובר לשלב 6 במסלול (קישור
- * משם). נפרד לגמרי מהתקדמות המסלול: מילוי היומן לא מסמן את שלב הזריקות
- * ולא מפעיל את רגע הסיום. הנתונים נשמרים דרך useInjectionJournal.
+ * משם). נפרד לגמרי מהתקדמות המסלול. היומן מוצג ככרטיסי יום: למעלה היום,
+ * מתחתיו ימים שתועדו (מהחדש לישן). הנתונים נשמרים דרך useInjectionJournal.
  */
 export default function InjectionsSection() {
   const api = useInjectionJournal();
   const { ready, activeCycle, journal } = api;
   const [today, setToday] = useState<string>("");
-  const [selected, setSelected] = useState<string>("");
-  const [tableView, setTableView] = useState(false);
   const [openGuideId, setOpenGuideId] = useState<string | null>(null);
   const [showAllGuides, setShowAllGuides] = useState(false);
+  const [guidesOpen, setGuidesOpen] = useState(false);
+  const [extraDate, setExtraDate] = useState<string | null>(null);
 
   useEffect(() => setToday(todayISO()), []);
-
-  const dates = useMemo(() => (activeCycle && today ? cycleDates(activeCycle, today) : []), [activeCycle, today]);
-
-  // יום נבחר ביומן: היום (אם בטווח), אחרת יום ההתחלה
-  useEffect(() => {
-    if (!activeCycle || !today) return;
-    setSelected((prev) => {
-      if (prev && dates.includes(prev)) return prev;
-      return dates.includes(today) ? today : activeCycle.startDate;
-    });
-  }, [activeCycle, today, dates]);
+  useEffect(() => setExtraDate(null), [activeCycle?.id]);
 
   const myGuideIds = useMemo(() => cycleMedGuideIds(activeCycle), [activeCycle]);
 
   const openGuide = (guideId: string | null) => {
+    setGuidesOpen(true);
     if (guideId) {
       setOpenGuideId(guideId);
       if (!myGuideIds.includes(guideId)) setShowAllGuides(true);
@@ -50,15 +53,23 @@ export default function InjectionsSection() {
       setShowAllGuides(true);
     }
     // גלילה פנימית בלבד — בלי לשנות את ה-hash (שמשמש לניווט בין אזורי האתר)
-    requestAnimationFrame(() => {
-      const target = document.getElementById(guideId ? `guide-${guideId}` : "injection-guides");
-      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      target?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
-    });
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        const target = document.getElementById(guideId ? `guide-${guideId}` : "injection-help");
+        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        target?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+      }),
+    );
   };
 
-  // "היום שלי" מציג את היום בפועל; לפני תחילת הסבב — את יום ההתחלה
-  const todayPanelDate = activeCycle && today ? (today < activeCycle.startDate ? activeCycle.startDate : today) : "";
+  // הכרטיס העליון: היום; לפני תחילת הסבב — יום ההתחלה
+  const topDate = activeCycle && today ? (today < activeCycle.startDate ? activeCycle.startDate : today) : "";
+  const otherDates = useMemo(() => {
+    if (!activeCycle) return [];
+    const list = recordedDates(activeCycle).filter((d) => d !== topDate);
+    if (extraDate && extraDate !== topDate && !list.includes(extraDate)) list.push(extraDate);
+    return list.sort((a, b) => b.localeCompare(a));
+  }, [activeCycle, topDate, extraDate]);
 
   return (
     <div className="print-stack animate-fadeUp">
@@ -67,7 +78,7 @@ export default function InjectionsSection() {
         <div className="min-w-0 flex-1">
           <h1 className="font-sans text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">תקופת הזריקות</h1>
           <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-ink/65 sm:text-base">
-            לא צריך לזכור הכול לבד. כאן אפשר לרכז את הזריקות, הבדיקות וההנחיות שקיבלת לאורך הסבב.
+            לא צריך לזכור הכול לבד. כאן אפשר לתעד בכמה שניות את הזריקות והמעקבים של כל יום.
           </p>
           <p className="mt-3 flex max-w-xl items-start gap-2 rounded-xl border-2 border-teal-100 bg-teal-50/70 px-3.5 py-2.5 text-sm leading-relaxed text-ink/80">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-teal-700" strokeWidth={2.25} aria-hidden="true" />
@@ -84,104 +95,136 @@ export default function InjectionsSection() {
       {!ready || !today ? (
         <p className="mt-8 text-sm text-ink/50">טוענת את היומן…</p>
       ) : !activeCycle ? (
-        <CycleSetup onCreate={api.createCycle} defaultDate={today} />
+        <CycleSetup onCreate={(d) => api.createCycle(d, autoLabel(journal.cycles.length))} defaultDate={today} />
       ) : (
         <>
           <CycleBar api={api} cycle={activeCycle} cycles={journal.cycles} />
 
-          {/* 2. היום שלי */}
-          <section aria-labelledby="today-title" className="mt-5 rounded-3xl border-2 border-mist-200 bg-white p-4 shadow-card sm:p-6">
-            <h2 id="today-title" className="text-xs font-bold uppercase tracking-wide text-teal-700">
-              היום שלי
+          {/* 2. היומן — כרטיס לכל יום */}
+          <section aria-labelledby="journal-title" className="mt-5">
+            <h2 id="journal-title" className="sr-only">
+              היומן שלי
             </h2>
-            <div className="mt-1.5">
-              <DayPanel
-                key={`today-${todayPanelDate}`}
+            <div className="space-y-4" data-testid="day-cards">
+              <DayCard
+                key={`${activeCycle.id}-${topDate}`}
                 cycle={activeCycle}
-                date={todayPanelDate}
+                date={topDate}
                 today={today}
                 onUpdateCycle={api.updateActiveCycle}
                 onOpenGuide={openGuide}
-                variant="today"
               />
-            </div>
-          </section>
 
-          {/* 3. יומן ימים ובדיקות */}
-          <section aria-labelledby="journal-title" className="mt-8">
-            <div className="flex flex-wrap items-end justify-between gap-2">
-              <h2 id="journal-title" className="font-sans text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
-                יומן הימים והמעקבים
-              </h2>
-              <div className="hidden gap-1 rounded-full bg-mist-100 p-1 md:flex" role="group" aria-label="תצוגת היומן">
-                <button
-                  type="button"
-                  aria-pressed={!tableView}
-                  onClick={() => setTableView(false)}
-                  className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold ${!tableView ? "bg-white text-ink shadow-sm" : "text-ink/60"}`}
-                >
-                  <LayoutList className="h-3.5 w-3.5" strokeWidth={2.25} />
-                  יום אחרי יום
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={tableView}
-                  onClick={() => setTableView(true)}
-                  className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold ${tableView ? "bg-white text-ink shadow-sm" : "text-ink/60"}`}
-                >
-                  <Table2 className="h-3.5 w-3.5" strokeWidth={2.25} />
-                  טבלה של כל התקופה
-                </button>
-              </div>
-            </div>
+              <AddDay
+                cycle={activeCycle}
+                taken={[topDate, ...otherDates]}
+                onPick={(d) => {
+                  setExtraDate(d);
+                  requestAnimationFrame(() =>
+                    document.querySelector(`[data-testid="day-card"][data-date="${d}"]`)?.scrollIntoView({ block: "center" }),
+                  );
+                }}
+              />
 
-            {tableView ? (
-              <div className="mt-3 rounded-2xl border-2 border-mist-200 bg-white p-3">
-                <PeriodTable
+              {otherDates.length > 0 && (
+                <h3 className="pt-2 text-sm font-bold text-ink/60">ימים קודמים</h3>
+              )}
+              {otherDates.map((d) => (
+                <DayCard
+                  key={`${activeCycle.id}-${d}`}
                   cycle={activeCycle}
-                  dates={dates}
+                  date={d}
                   today={today}
-                  onSelect={(d) => {
-                    setSelected(d);
-                    setTableView(false);
-                  }}
+                  onUpdateCycle={api.updateActiveCycle}
+                  onOpenGuide={openGuide}
+                  startEditing={d === extraDate}
                 />
-              </div>
-            ) : (
-              <>
-                <div className="mt-3">
-                  <DayStrip cycle={activeCycle} dates={dates} selected={selected} today={today} onSelect={setSelected} />
-                </div>
-                {selected && (
-                  <div className="mt-2 rounded-3xl border-2 border-mist-200 bg-white p-4 shadow-card sm:p-6">
-                    <DayPanel
-                      key={`journal-${selected}`}
-                      cycle={activeCycle}
-                      date={selected}
-                      today={today}
-                      onUpdateCycle={api.updateActiveCycle}
-                      onOpenGuide={openGuide}
-                      variant="journal"
-                    />
-                  </div>
-                )}
-              </>
-            )}
+              ))}
+            </div>
           </section>
         </>
       )}
 
-      {/* 4. איך מזריקים? */}
-      <div className="mt-10 border-t border-mist-200 pt-8">
-        <GuidesLibrary
-          myGuideIds={myGuideIds}
-          openGuideId={openGuideId}
-          onToggleGuide={(id) => setOpenGuideId((cur) => (cur === id ? null : id))}
-          showAll={showAllGuides}
-          onToggleShowAll={() => setShowAllGuides((v) => !v)}
-        />
-      </div>
+      {/* 3. עזרה בהזרקה — מכווץ כברירת מחדל */}
+      <section id="injection-help" className="no-print mt-10 scroll-mt-24 lg:scroll-mt-8" data-testid="injection-help">
+        <button
+          type="button"
+          onClick={() => setGuidesOpen((v) => !v)}
+          aria-expanded={guidesOpen}
+          aria-controls="injection-help-body"
+          className="flex w-full items-center gap-3 rounded-2xl border-2 border-mist-200 bg-white px-4 py-3.5 text-right shadow-sm transition-colors hover:border-warm-300"
+          data-testid="injection-help-toggle"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-warm-100 text-ink" aria-hidden="true">
+            <LifeBuoy className="h-5 w-5" strokeWidth={2} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-bold text-ink">צריכה עזרה בהזרקה?</span>
+            <span className="block text-xs text-ink/55">סרטוני הדרכה ועלונים רשמיים לכל תרופה</span>
+          </span>
+          <ChevronDown className={`h-5 w-5 shrink-0 text-ink/50 transition-transform ${guidesOpen ? "rotate-180" : ""}`} strokeWidth={2.25} aria-hidden="true" />
+        </button>
+        <div id="injection-help-body" hidden={!guidesOpen} className="mt-5">
+          <GuidesLibrary
+            myGuideIds={myGuideIds}
+            openGuideId={openGuideId}
+            onToggleGuide={(id) => setOpenGuideId((cur) => (cur === id ? null : id))}
+            showAll={showAllGuides}
+            onToggleShowAll={() => setShowAllGuides((v) => !v)}
+          />
+        </div>
+      </section>
     </div>
+  );
+}
+
+function AddDay({ cycle, taken, onPick }: { cycle: JournalCycle; taken: string[]; onPick: (d: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [date, setDate] = useState("");
+  const [err, setErr] = useState("");
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="no-print inline-flex items-center gap-1.5 text-sm font-semibold text-teal-700 hover:underline"
+        data-testid="add-day"
+      >
+        <CalendarPlus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+        תיעוד של יום אחר
+      </button>
+    );
+  }
+  return (
+    <form
+      className="no-print flex flex-wrap items-end gap-2 rounded-2xl bg-mist-100/70 px-4 py-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!isValidISODate(date)) return setErr("בחרי תאריך");
+        setErr("");
+        setOpen(false);
+        setDate("");
+        onPick(date);
+      }}
+      data-testid="add-day-form"
+    >
+      <label className="text-xs font-semibold text-ink/70">
+        איזה יום?
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={`${inputCls} w-44`} dir="ltr" />
+      </label>
+      <button type="submit" className="min-h-[42px] rounded-full bg-teal-600 px-4 text-sm font-bold text-ink hover:bg-teal-500">
+        {date && taken.includes(date) ? "מעבר ליום" : "פתיחת היום"}
+      </button>
+      <button type="button" onClick={() => setOpen(false)} className="min-h-[42px] px-2 text-sm font-semibold text-ink/55">
+        ביטול
+      </button>
+      {date && isValidISODate(date) && (
+        <p className="w-full text-xs text-ink/55">
+          {dayNumber(cycle, date) >= 1 ? `יום ${dayNumber(cycle, date)} בסבב` : "לפני תחילת הסבב"} · {formatDateLong(date)}
+        </p>
+      )}
+      {err && <p className="w-full text-xs font-semibold text-teal-700">{err}</p>}
+    </form>
   );
 }
 
@@ -212,14 +255,13 @@ function SyncNote({ api }: { api: ReturnType<typeof useInjectionJournal> }) {
   );
 }
 
-function CycleSetup({ onCreate, defaultDate }: { onCreate: (startDate: string, label: string) => void; defaultDate: string }) {
+function CycleSetup({ onCreate, defaultDate, onCancel }: { onCreate: (startDate: string) => void; defaultDate: string; onCancel?: () => void }) {
   const [date, setDate] = useState(defaultDate);
-  const [label, setLabel] = useState("הסבב שלי");
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (date) onCreate(date, label.trim() || "הסבב שלי");
+        if (date) onCreate(date);
       }}
       className="mt-6 rounded-3xl border-2 border-mist-200 bg-white p-5 shadow-card sm:p-6"
       data-testid="cycle-setup"
@@ -228,20 +270,21 @@ function CycleSetup({ onCreate, defaultDate }: { onCreate: (startDate: string, l
         <CalendarDays className="h-5 w-5 text-teal-700" strokeWidth={2} aria-hidden="true" />
         מתי מתחילות הזריקות?
       </h2>
-      <p className="mt-1 text-sm text-ink/60">לפי התאריך הזה נחשב את ״יום 1״, ״יום 2״ וכן הלאה. אפשר לשנות אותו בהמשך.</p>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <label className="block text-xs font-semibold text-ink/70">
-          יום הזריקה הראשון
-          <input type="date" required value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} dir="ltr" />
-        </label>
-        <label className="block text-xs font-semibold text-ink/70">
-          שם לסבב (לא חובה)
-          <input value={label} onChange={(e) => setLabel(e.target.value)} className={inputCls} maxLength={60} />
-        </label>
+      <p className="mt-1 text-sm text-ink/60">לפי התאריך הזה נספור ״יום 1״, ״יום 2״ וכן הלאה. אפשר לשנות אותו בהמשך.</p>
+      <label className="mt-4 block max-w-xs text-xs font-semibold text-ink/70">
+        יום הזריקה הראשון
+        <input type="date" required value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} dir="ltr" />
+      </label>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button type="submit" className="min-h-[44px] rounded-full bg-teal-600 px-6 text-sm font-bold text-ink hover:bg-teal-500">
+          מתחילה מעקב
+        </button>
+        {onCancel && (
+          <button type="button" onClick={onCancel} className="min-h-[44px] px-3 text-sm font-semibold text-ink/55">
+            ביטול
+          </button>
+        )}
       </div>
-      <button type="submit" className="mt-4 min-h-[42px] rounded-full bg-teal-600 px-6 text-sm font-bold text-ink hover:bg-teal-500">
-        פתיחת היומן
-      </button>
     </form>
   );
 }
@@ -255,16 +298,16 @@ function CycleBar({
   cycle: JournalCycle;
   cycles: JournalCycle[];
 }) {
-  const [editing, setEditing] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [date, setDate] = useState(cycle.startDate);
   const [label, setLabel] = useState(cycle.label);
+  const [savedMsg, setSavedMsg] = useState(false);
 
   useEffect(() => {
     setDate(cycle.startDate);
     setLabel(cycle.label);
-    setEditing(false);
     setConfirmDelete(false);
   }, [cycle.id, cycle.startDate, cycle.label]);
 
@@ -272,66 +315,80 @@ function CycleBar({
     return (
       <CycleSetup
         defaultDate={todayISO()}
-        onCreate={(d, l) => {
-          api.createCycle(d, l);
+        onCancel={() => setCreating(false)}
+        onCreate={(d) => {
+          api.createCycle(d, autoLabel(cycles.length));
           setCreating(false);
+          setMoreOpen(false);
         }}
       />
     );
   }
 
   return (
-    <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl bg-mist-100/70 px-4 py-3 text-sm" data-testid="cycle-bar">
-      {cycles.length > 1 ? (
-        <label className="inline-flex items-center gap-2 font-semibold text-ink">
-          <span className="sr-only">בחירת סבב</span>
-          <select
-            value={cycle.id}
-            onChange={(e) => api.setActiveCycle(e.target.value)}
-            className="rounded-lg border border-mist-200 bg-white px-2 py-1 text-sm"
-          >
-            {cycles.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      ) : (
+    <div className="mt-6 rounded-2xl bg-mist-100/70 px-4 py-3 text-sm" data-testid="cycle-bar">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <span className="font-bold text-ink">{cycle.label}</span>
-      )}
-      {editing ? (
-        <form
-          className="flex flex-wrap items-end gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!date) return;
-            api.updateActiveCycle((c) => ({ ...c, startDate: date, label: label.trim() || c.label }));
-            setEditing(false);
-          }}
+        <span className="text-ink/60">התחלה: {formatDateLong(cycle.startDate)}</span>
+        <button
+          type="button"
+          onClick={() => setMoreOpen((v) => !v)}
+          aria-expanded={moreOpen}
+          className="no-print inline-flex items-center gap-1 text-xs font-semibold text-ink/60 hover:text-ink sm:mr-auto"
+          data-testid="more-options"
         >
-          <label className="text-xs font-semibold text-ink/70">
-            תאריך התחלה
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="mt-0.5 block rounded-lg border border-mist-200 bg-white px-2 py-1 text-sm" dir="ltr" />
-          </label>
-          <label className="text-xs font-semibold text-ink/70">
-            שם
-            <input value={label} onChange={(e) => setLabel(e.target.value)} className="mt-0.5 block w-32 rounded-lg border border-mist-200 bg-white px-2 py-1 text-sm" />
-          </label>
-          <button type="submit" className="rounded-full bg-teal-600 px-3 py-1.5 text-xs font-bold text-ink">
-            שמירה
-          </button>
-          <button type="button" onClick={() => setEditing(false)} className="px-2 py-1.5 text-xs font-semibold text-ink/55">
-            ביטול
-          </button>
-        </form>
-      ) : (
-        <>
-          <span className="text-ink/60">התחלה: {formatDateLong(cycle.startDate)}</span>
-          <span className="flex flex-wrap gap-3 text-xs font-semibold sm:mr-auto">
-            <button type="button" onClick={() => setEditing(true)} className="text-teal-700 hover:underline">
-              עריכת תאריך ושם
+          <Settings2 className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
+          אפשרויות נוספות
+          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${moreOpen ? "rotate-180" : ""}`} strokeWidth={2.25} aria-hidden="true" />
+        </button>
+      </div>
+
+      {moreOpen && (
+        <div className="no-print mt-3 space-y-3 border-t border-mist-200 pt-3" data-testid="more-options-panel">
+          {cycles.length > 1 && (
+            <label className="block text-xs font-semibold text-ink/70">
+              מעבר לסבב אחר
+              <select
+                value={cycle.id}
+                onChange={(e) => api.setActiveCycle(e.target.value)}
+                className="mt-1 block rounded-xl border border-mist-200 bg-white px-3 py-2 text-sm"
+              >
+                {cycles.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <form
+            className="flex flex-wrap items-end gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!date) return;
+              api.updateActiveCycle((c) => ({ ...c, startDate: date, label: label.trim() || c.label }));
+              setSavedMsg(true);
+              setTimeout(() => setSavedMsg(false), 2200);
+            }}
+          >
+            <label className="text-xs font-semibold text-ink/70">
+              שם הסבב
+              <input value={label} onChange={(e) => setLabel(e.target.value)} maxLength={60} className={`${inputCls} w-44`} data-testid="cycle-label" />
+            </label>
+            <label className="text-xs font-semibold text-ink/70">
+              יום הזריקה הראשון
+              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={`${inputCls} w-44`} dir="ltr" />
+            </label>
+            <button type="submit" className="min-h-[42px] rounded-full bg-teal-600 px-4 text-xs font-bold text-ink">
+              שמירה
             </button>
+            {savedMsg && (
+              <span className="self-center text-xs font-semibold text-warm-500" role="status">
+                נשמר ✓
+              </span>
+            )}
+          </form>
+          <div className="flex flex-wrap gap-4 text-xs font-semibold">
             <button type="button" onClick={() => setCreating(true)} className="text-teal-700 hover:underline">
               סבב חדש
             </button>
@@ -350,8 +407,8 @@ function CycleBar({
                 מחיקת הסבב
               </button>
             )}
-          </span>
-        </>
+          </div>
+        </div>
       )}
     </div>
   );
