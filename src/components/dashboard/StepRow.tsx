@@ -56,22 +56,30 @@ export default function StepRow({
   const isDone = totalTasks > 0 && doneTasks === totalTasks;
   const progressPercent = totalTasks === 0 ? 0 : Math.round((doneTasks / totalTasks) * 100);
 
+  // שלב שהושלם ומקופל: עיצוב "שקט" ופחות דומיננטי מבעל-כשל פעיל בכוונה —
+  // רקע/מסגרת אפרפרים שטוחים (בלי הדגשת teal), במקום הכרטיס הצבעוני שהיה
+  // כאן קודם. עדיין ברור שהושלם (תגית "השלמת את השלב" + progress + תרנגולת
+  // עם doneBadge) — רק לא "בולט" יותר משלב שעדיין פעיל. בפתיחה (isExpanded)
+  // נשאר אותו עיצוב מושתק, כדי שהמעבר קיפול<->פתיחה לא "יקפוץ" חזותית.
+  const doneCardClasses = "border-mist-200 bg-mist-50/70";
+  const activeCardClasses = "border-mist-200 bg-white";
+
   return (
     <li
       ref={(el) => setRowRef(step.id, el)}
-      className={`scroll-mt-28 rounded-2xl border-2 bg-white p-3.5 shadow-card transition-all duration-300 sm:p-4 ${
-        isDone ? "border-teal-200 bg-teal-50/30" : "border-mist-200"
+      className={`scroll-mt-28 rounded-2xl border-2 p-3.5 shadow-card transition-all duration-300 sm:p-4 ${
+        isDone ? doneCardClasses : activeCardClasses
       }`}
     >
       <div className="flex items-start gap-2.5 sm:gap-3">
         {henName && (
           <HenIllustration
             name={henName}
-            blob={isDone ? "mint" : "cream"}
+            blob="cream"
             sizeClassName={CHECKLIST_HEN_SIZE}
             activeRing={isExpanded}
             doneBadge={isDone}
-            className="mt-0.5"
+            className={`mt-0.5 ${isDone ? "opacity-80" : ""}`}
           />
         )}
 

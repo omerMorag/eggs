@@ -5,8 +5,10 @@ import Logo from "@/components/brand/Logo";
 
 interface MobileHeaderProps {
   onMenuClick: () => void;
-  /** לחיצה על הלוגו מחזירה למסך הפתיחה (לא רק לאזור "המסלול שלי") */
-  onGoHome: () => void;
+  /** לחיצה על הלוגו — גוללת לכותרת "המסלול האישי שלך", בלי לאפס את מסך
+   *  הפתיחה/ההתקדמות (ר' AppShell.tsx: handleLogoClick). ל-MobileHeader
+   *  אין AboutLink משלו, ולכן אין כאן צורך בפרופ נפרד עבורו כמו ב-Sidebar/MobileDrawer. */
+  onLogoClick: () => void;
 }
 
 /**
@@ -26,10 +28,10 @@ interface MobileHeaderProps {
  * לחלוטין (לא תלוי בגובה ההורה). ה-`<main>` ב-AppShell.tsx מפצה על כך עם
  * ריפוד עליון נוסף במובייל, כדי שתוכן לא ייכנס מתחת ל-header הקבוע.
  */
-export default function MobileHeader({ onMenuClick, onGoHome }: MobileHeaderProps) {
+export default function MobileHeader({ onMenuClick, onLogoClick }: MobileHeaderProps) {
   return (
     <header className="no-print fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between border-b border-mist-200 bg-mist-100/90 px-3.5 backdrop-blur-md sm:h-16 sm:px-4 lg:hidden">
-      <Logo variant="compact" onClick={onGoHome} />
+      <Logo variant="compact" onClick={onLogoClick} />
 
       <button
         type="button"

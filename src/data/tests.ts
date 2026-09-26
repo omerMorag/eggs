@@ -46,7 +46,54 @@ export const testItems: TestItem[] = [
       { label: "LH", note: "נבדקת יחד עם FSH ואסטרדיול אם נכללה בהפניה שקיבלת" },
       { label: "אסטרדיול", note: "לרוב בימים 2–4 למחזור, כשהמטרה היא בדיקת ערכי בסיס" },
       // AMH לא תלוי במחזור — ASRM: "can be measured at any point in the menstrual cycle".
-      { label: "AMH", note: "אפשר לבצע בכל יום במחזור" },
+      // optional: true — לא כל יחידה דורשת AMH (ר' secondaryNote), ולכן היא
+      // לא נדרשת כדי ש"פרופיל הורמונלי" ייחשב הושלם (ר' useJourneyProgress.ts).
+      // מחירי priceInfo אומתו מול המקורות עצמם ב-2026-09-26 (ר' checkedDate
+      // בכל שורה) — אסותא רמת החייל לא אומת בפועל ומסומן בהתאם, לא מוצג כמחיר עדכני.
+      {
+        label: "AMH",
+        note: "אפשר לבצע בכל יום במחזור",
+        secondaryNote:
+          "בדיקת AMH אינה נדרשת בכל יחידה. אם תתבקשי לבצע אותה, בדקי אם יש לך זכאות דרך הקופה או היחידה; בביצוע במימון עצמי יש תשלום.",
+        optional: true,
+        priceInfo: {
+          linkLabel: "איפה אפשר לבצע וכמה זה עולה?",
+          intro:
+            "יש מקומות שבהם אפשר לבצע את הבדיקה בזכאות דרך היחידה או הקופה — כדאי לבדוק זאת קודם. מחיר במימון עצמי משתנה בין מקומות ועשוי להשתנות עם הזמן.",
+          rows: [
+            {
+              name: "מרכז רפואי וולפסון, חולון",
+              price: "300 ₪",
+              sourceLabel: "עמוד היחידה",
+              sourceUrl: "https://www.nashim.net/?CategoryID=1202",
+              checkedDate: "2026-09-26",
+              verification: "verified",
+              note: "לפי העמוד, הבדיקה ללא עלות למטופלות היחידה.",
+            },
+            {
+              name: "אסותא רמת החייל, תל אביב",
+              sourceLabel: "עמוד המעבדה",
+              sourceUrl:
+                "https://www.assuta.co.il/hospitals/about_assuta_ramathahayal/clinics_ramathahayal/laboratory/",
+              checkedDate: "2026-09-26",
+              verification: "needs-verification",
+              note: "לא אותר מחיר מפורש בעמוד הנוכחי — כדאי לברר טלפונית מול המעבדה לפני קביעת תור.",
+            },
+            {
+              name: "הדסה הר הצופים, ירושלים",
+              price: "448 ₪",
+              sourceLabel: "עמוד הבדיקה",
+              sourceUrl: "https://he.hadassah.org.il/women/amh-test/",
+              checkedDate: "2026-09-26",
+              verification: "verified",
+            },
+          ],
+          fundLinks: [
+            { label: "בדיקת זכאות דרך מכבי", url: "https://www.maccabi4u.co.il/healthguide/labs/amh/" },
+            { label: "בדיקת זכאות דרך כללית", url: "https://www.clalit.co.il/he/myrights/fertility/Pages/amh-test.aspx" },
+          ],
+        },
+      },
       { label: "פרולקטין", note: "יש לתכנן את הבדיקה לפחות 3 שעות אחרי היקיצה; בדקי אם המעבדה מבקשת גם מנוחה לפני לקיחת הדם" },
       { label: "פרוגסטרון", note: "המועד תלוי בסיבת הבדיקה — יש לפעול לפי הנחיית הרופא/ה שהפנתה אותך" },
       // TSH בכוונה בלי הנחיית יום-במחזור — אינו תלוי במחזור.

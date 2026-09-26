@@ -18,7 +18,10 @@ interface MobileDrawerProps {
   progress: JourneyProgress;
   onNavigate: (id: SectionId) => void;
   onClose: () => void;
-  /** לחיצה על הלוגו מחזירה למסך הפתיחה (לא רק לאזור "המסלול שלי") */
+  /** לחיצה על הלוגו — גוללת לכותרת "המסלול האישי שלך", בלי לאפס את מסך
+   *  הפתיחה/ההתקדמות (ר' AppShell.tsx: handleLogoClick) */
+  onLogoClick: () => void;
+  /** לחיצה על "להכיר את מקפיאות" (AboutLink) — מחזירה למסך הפתיחה */
   onGoHome: () => void;
 }
 
@@ -35,6 +38,7 @@ export default function MobileDrawer({
   progress,
   onNavigate,
   onClose,
+  onLogoClick,
   onGoHome,
 }: MobileDrawerProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -84,7 +88,7 @@ export default function MobileDrawer({
               variant="compact"
               tabIndex={open ? 0 : -1}
               onClick={() => {
-                onGoHome();
+                onLogoClick();
                 onClose();
               }}
             />

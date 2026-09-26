@@ -161,24 +161,34 @@ function subItemCount(testId: number): number {
   return test?.subItems && test.subItems.length > 0 ? test.subItems.length : 1;
 }
 
+/** אינדקסי הרכיבים ה"נדרשים" בתוך בדיקה — כל תתי-הרכיבים, פרט לאלה
+ *  שמסומנים optional (כרגע רק AMH, ר' tests.ts) — משמש הן לחישוב מתי
+ *  בדיקה שלמה נחשבת "הושלמה" (isTestDone) והן לקיצור הדרך "סמני/בטלי
+ *  הכול" (toggleTest), כדי ששני המקומות האלה לעולם לא יסתרו זה את זה.
+ *  אם כל הרכיבים בקבוצה סומנו (בטעות) כ-optional, חוזרים לדרוש את כולם —
+ *  כדי לא ליצור קבוצה שתמיד "הושלמה" מבלי לסמן דבר. */
+function requiredSubIndexes(testId: number): number[] {
+  const test = testItems.find((t) => t.id === testId);
+  if (!test?.subItems || test.subItems.length === 0) return [0];
+  const required = test.subItems.reduce<number[]>((acc, sub, index) => {
+    if (!sub.optional) acc.push(index);
+    return acc;
+  }, []);
+  return required.length > 0 ? required : test.subItems.map((_, index) => index);
+}
+
+/** האם בדיקה נתונה נחשבת "הושלמה" — כל הרכיבים הנדרשים שלה (לא כולל
+ *  רכיבי optional כמו AMH) מסומנים ב-subItemsSet. מקור אמת יחיד, נעשה בו
+ *  שימוש הן ב-completedTests (המקומי) והן במיזוג נתוני השרת למטה, כדי
+ *  שהשניים לא יתבדרו. */
+function isTestDone(testId: number, subItemsSet: Set<string>): boolean {
+  return requiredSubIndexes(testId).every((index) => subItemsSet.has(`${testId}:${index}`));
+}
+
 /** מספר המשימות בתוך שלב נתון במסלול — לפחות 1 (fallback לשלב בלי tasks מוגדרות) */
 function stepTaskCount(stepId: number): number {
   const step = journeySteps.find((s) => s.id === stepId);
   return step?.tasks && step.tasks.length > 0 ? step.tasks.length : 1;
-}
-
-/** כל מפתחות המשימות במסלול שעוד לא סומנו ("stepId:taskIndex") — משמש
- *  לזיהוי הרגע שבו המשתמשת מסמנת בעצמה את המשימה האחרונה (JourneyFinale). */
-export function missingStepTaskKeys(completedStepTasks: Set<string>): string[] {
-  const missing: string[] = [];
-  journeySteps.forEach((step) => {
-    const count = stepTaskCount(step.id);
-    for (let i = 0; i < count; i += 1) {
-      const key = `${step.id}:${i}`;
-      if (!completedStepTasks.has(key)) missing.push(key);
-    }
-  });
-  return missing;
 }
 
 /** בהינתן קבוצת מפתחות "stepId:taskIndex" שסומנו — אילו מזהי שלבים שלמים (כל המשימות שלהם מסומנות) */
@@ -253,15 +263,7 @@ export function useJourneyProgress() {
   const completedTests = useMemo(() => {
     const done = new Set<number>();
     testItems.forEach((test) => {
-      const count = subItemCount(test.id);
-      let allChecked = true;
-      for (let i = 0; i < count; i += 1) {
-        if (!completedTestSubItems.has(`${test.id}:${i}`)) {
-          allChecked = false;
-          break;
-        }
-      }
-      if (allChecked) done.add(test.id);
+      if (isTestDone(test.id, completedTestSubItems)) done.add(test.id);
     });
     return done;
   }, [completedTestSubItems]);
@@ -368,15 +370,7 @@ export function useJourneyProgress() {
 
       const mergedTests: number[] = [];
       testItems.forEach((test) => {
-        const count = subItemCount(test.id);
-        let allChecked = true;
-        for (let i = 0; i < count; i += 1) {
-          if (!mergedSubItems.has(`${test.id}:${i}`)) {
-            allChecked = false;
-            break;
-          }
-        }
-        if (allChecked) mergedTests.push(test.id);
+        if (isTestDone(test.id, mergedSubItems)) mergedTests.push(test.id);
       });
 
       await pushServerProgress({
@@ -454,23 +448,21 @@ export function useJourneyProgress() {
     });
   }, []);
 
-  /** קיצור דרך על כל הבדיקה: אם לא הכול מסומן — מסמנת הכול; אם הכול כבר מסומן — מבטלת הכול */
+  /** קיצור דרך על כל הבדיקה: אם לא כל הרכיבים ה*נדרשים* מסומנים — מסמנת
+   *  אותם; אם כולם כבר מסומנים — מבטלת אותם. נוגעת רק ברכיבים הנדרשים
+   *  (requiredSubIndexes) — לעולם לא ברכיבי optional כמו AMH, כדי שאישה
+   *  שלא נדרשה לבצע AMH תוכל להשלים את הבדיקה כולה דרך הקיצור הזה בלי
+   *  שהוא יסמן עבורה בטעות שביצעה אותו. */
   const toggleTest = useCallback((testId: number) => {
-    const count = subItemCount(testId);
+    const indexes = requiredSubIndexes(testId);
     setCompletedTestSubItems((prev) => {
       const next = new Set(prev);
-      let allChecked = true;
-      for (let i = 0; i < count; i += 1) {
-        if (!next.has(`${testId}:${i}`)) {
-          allChecked = false;
-          break;
-        }
-      }
-      for (let i = 0; i < count; i += 1) {
-        const key = `${testId}:${i}`;
+      const allChecked = indexes.every((index) => next.has(`${testId}:${index}`));
+      indexes.forEach((index) => {
+        const key = `${testId}:${index}`;
         if (allChecked) next.delete(key);
         else next.add(key);
-      }
+      });
       return next;
     });
   }, []);

@@ -10,7 +10,6 @@ import RoadmapSection from "@/components/sections/RoadmapSection";
 import TestsSection from "@/components/sections/TestsSection";
 import WhereToGoSection from "@/components/sections/WhereToGoSection";
 import MyChancesSection from "@/components/sections/MyChancesSection";
-import InjectionsSection from "@/components/sections/InjectionsSection";
 import GuidesSection from "@/components/sections/GuidesSection";
 import CostEstimatorSection from "@/components/sections/CostEstimatorSection";
 import StoriesSection from "@/components/sections/StoriesSection";
@@ -63,20 +62,46 @@ export default function AppShell() {
   const { section, navigate } = useHashSection();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [openStepId, setOpenStepId] = useState<number | null>(null);
-  const { showHero, chromeVisible, reducedMotion, revealChrome, skipHero, resetHero } = useHeroScrollTransition();
+  const { showHero, chromeVisible, reducedMotion, revealChrome, resetHero } = useHeroScrollTransition();
   const roadmapTopRef = useRef<HTMLDivElement | null>(null);
   const personalIntroRef = useRef<HTMLDivElement | null>(null);
 
   // בכל מעבר בין אזורים, גוללים לראש התוכן — כמו מעבר בין "עמודים" אמיתי
   useEffect(() => {
     window.scrollTo({ top: 0 });
-    // מי שכבר עברה את מסך הפתיחה (ה-Chrome גלוי) ויצאה לאזור אחר — לא
-    // מציגים לה שוב את ה-Hero וההיכרות כשהיא חוזרת ל"המסלול שלי" מהתפריט;
-    // אחרת החזרה נוחתת בראש מסך הפתיחה ולא בראש המסלול. (הלוגו / "להכיר את
-    // מקפיאות" ממשיכים להפעיל את מסך הפתיחה מחדש בכוונה, דרך resetHero.)
-    if (section !== "roadmap" && chromeVisible && showHero) skipHero();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [section]);
+
+  // --- לחיצה על הלוגו (§2, נפרד מ-handleGoHome/AboutLink למטה) ---
+  // גוללת בדיוק לכותרת "המסלול האישי שלך" (#roadmap-title, ר' RoadmapSection.tsx)
+  // ומעבירה לאזור "roadmap" אם צריך — בלי לאפס את מסך הפתיחה/מקטע ההיכרות
+  // (לא קוראת ל-resetHero) ובלי לגעת בהתקדמות בכלל. pendingLogoScrollRef
+  // פותר את המקרה שבו האזור עדיין לא "roadmap": navigate() רק מבקש שינוי
+  // state (אסינכרוני מבחינת ה-DOM), כך שה-#roadmap-title עוד לא קיים
+  // בפועל ברגע הלחיצה עצמה — הדגל מסמן "לגלול ברגע שהאזור יהפוך לroadmap",
+  // וה-useEffect שלמטה (תלוי ב-section, אחרי effect הגלילה-לראש הרגיל
+  // למעלה) מבצע את הגלילה המדויקת אחרי שהתוכן כבר מורנדר.
+  const pendingLogoScrollRef = useRef(false);
+
+  const scrollToRoadmapTitle = useCallback(() => {
+    const behavior: ScrollBehavior = reducedMotion ? "auto" : "smooth";
+    document.getElementById("roadmap-title")?.scrollIntoView({ behavior, block: "start" });
+  }, [reducedMotion]);
+
+  useEffect(() => {
+    if (section === "roadmap" && pendingLogoScrollRef.current) {
+      pendingLogoScrollRef.current = false;
+      scrollToRoadmapTitle();
+    }
+  }, [section, scrollToRoadmapTitle]);
+
+  const handleLogoClick = useCallback(() => {
+    if (section === "roadmap") {
+      scrollToRoadmapTitle();
+    } else {
+      pendingLogoScrollRef.current = true;
+      navigate("roadmap");
+    }
+  }, [section, navigate, scrollToRoadmapTitle]);
 
   // "הושג המסלול" — גם בלחיצה על אחד מכפתורי ה-CTA וגם בהגעה בגלילה
   // טבעית: חושף את ה-Chrome ומסמנת hasSeenIntro (פעם אחת, אידמפוטנטית).
@@ -143,9 +168,11 @@ export default function AppShell() {
     setOpenStepId(id);
   };
 
-  // לחיצה על הלוגו / קישור "להכיר את מקפיאות": "חוזרת הביתה" — גם חוזרת
-  // לאזור "המסלול שלי" וגם מפעילה מחדש את מסך הפתיחה + מקטע ההיכרות
-  // מעליו (תצוגה חוזרת מודעת — לא "שוכחת" ש-hasSeenIntro כבר סומן).
+  // קישור "להכיר את מקפיאות" (AboutLink) בלבד — "חוזר הביתה": גם חוזר
+  // לאזור "המסלול שלי" וגם מפעיל מחדש את מסך הפתיחה + מקטע ההיכרות מעליו
+  // (תצוגה חוזרת מודעת — לא "שוכחת" ש-hasSeenIntro כבר סומן). הלוגו עצמו
+  // **לא** משתמש בזה יותר — ר' handleLogoClick למעלה, שגולל למסלול בלי
+  // לאפס את מסך הפתיחה.
   const handleGoHome = () => {
     resetHero();
     navigate("roadmap");
@@ -163,9 +190,10 @@ export default function AppShell() {
           section={section}
           progress={progress}
           onNavigate={navigate}
+          onLogoClick={handleLogoClick}
           onGoHome={handleGoHome}
         />
-        <MobileHeader onMenuClick={() => setDrawerOpen(true)} onGoHome={handleGoHome} />
+        <MobileHeader onMenuClick={() => setDrawerOpen(true)} onLogoClick={handleLogoClick} />
       </div>
       <MobileDrawer
         open={drawerOpen}
@@ -173,6 +201,7 @@ export default function AppShell() {
         progress={progress}
         onNavigate={navigate}
         onClose={() => setDrawerOpen(false)}
+        onLogoClick={handleLogoClick}
         onGoHome={handleGoHome}
       />
 
@@ -197,10 +226,7 @@ export default function AppShell() {
             מוסתר (lg:hidden) אז lg:py-12 חוזר לריפוד סימטרי רגיל. */}
         <main className="mx-auto max-w-4xl px-3.5 pb-6 pt-[4.75rem] sm:px-6 sm:pb-9 sm:pt-[5.5rem] lg:py-12">
           {section === "roadmap" && (
-            // scroll-mt זהה לריפוד העליון של main: גלילה לראש המסלול (כפתור
-            // "מתחילה את המסלול") נוחתת בתחילת העמוד עצמו — עם המרווח שמעל
-            // הכותרת ובלי שה-header הקבוע במובייל יסתיר אותה.
-            <div ref={roadmapTopRef} className="scroll-mt-[4.75rem] sm:scroll-mt-[5.5rem] lg:scroll-mt-12">
+            <div ref={roadmapTopRef}>
               <RoadmapSection progress={progress} openStepId={openStepId} onOpenStep={openStep} />
             </div>
           )}
@@ -211,7 +237,6 @@ export default function AppShell() {
           {section === "stories" && <StoriesSection />}
           {section === "admin-stories" && <AdminStoriesSection />}
           {section === "guides" && <GuidesSection />}
-          {section === "injections" && <InjectionsSection />}
         </main>
 
         <DisclaimerFooter />

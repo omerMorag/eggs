@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Zap } from "lucide-react";
-import { missingStepTaskKeys, type JourneyProgress } from "@/lib/useJourneyProgress";
+import type { JourneyProgress } from "@/lib/useJourneyProgress";
 import StepList from "@/components/dashboard/StepList";
 import NextActionCard from "@/components/dashboard/NextActionCard";
-import PrintButton from "@/components/dashboard/PrintButton";
 import ResetButton from "@/components/dashboard/ResetButton";
-import JourneyFinale from "@/components/completion/JourneyFinale";
+import CompletionCelebration from "@/components/completion/CompletionCelebration";
+import ScrollToCompletionHint from "@/components/completion/ScrollToCompletionHint";
 
 /** כמה זמן ההדגשה העדינה של המשימה נשארת דלוקה אחרי לחיצה על CTA "להמשך"
  *  ב-NextActionCard, לפני שהיא נעלמת מעצמה. */
@@ -17,6 +17,9 @@ const TASK_HIGHLIGHT_MS = 1800;
  *  (StepRow: transition-all duration-300) תספיק להתקדם ולתת לתא של
  *  המשימה מיקום יציב על המסך לפני שגוללים אליו בפעם השנייה. */
 const SCROLL_TO_TASK_DELAY_MS = 340;
+/** כמה זמן שלב שהושלם הרגע נשאר פתוח (מציג את סימון ההשלמה) לפני שהוא
+ *  מתקפל אוטומטית — מספיק זמן "לראות" את ההשלמה בלי להרגיש כמו קפיצה מיידית. */
+const AUTO_COLLAPSE_DELAY_MS = 1400;
 
 function prefersReducedMotion(): boolean {
   return (
@@ -66,6 +69,59 @@ export default function RoadmapSection({ progress, openStepId, onOpenStep }: Roa
     };
   }, []);
 
+  // --- קיפול אוטומטי של שלב שהושלם הרגע (§4) ---
+  // openStepId/completedSteps "העדכניים ביותר" ב-refs, כדי שה-setTimeout
+  // למטה יבדוק את המצב בפועל *ברגע שהוא יורה*, לא את מה שהיה קיים בזמן
+  // שהוא נקבע (שיכול להיות "מיושן" אם המשתמשת פתחה שלב אחר/ביטלה סימון בינתיים).
+  const openStepIdRef = useRef(openStepId);
+  useEffect(() => {
+    openStepIdRef.current = openStepId;
+  }, [openStepId]);
+
+  const completedStepsRef = useRef(progress.completedSteps);
+  useEffect(() => {
+    completedStepsRef.current = progress.completedSteps;
+  }, [progress.completedSteps]);
+
+  // מזהי השלבים שהיו מסומנים כ"הושלמו" ברינדור הקודם — null רק בטעינה
+  // הראשונה, כדי שלא "נקפל" שלבים שכבר היו מושלמים מלכתחילה (ממילא הם
+  // מתחילים מקופלים כברירת מחדל, כי openStepId מתחיל כ-null).
+  const prevCompletedStepsRef = useRef<Set<number> | null>(null);
+  const collapseTimeoutsRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+
+  useEffect(() => {
+    const prev = prevCompletedStepsRef.current;
+    const current = progress.completedSteps;
+    prevCompletedStepsRef.current = current;
+    if (prev === null) return;
+
+    current.forEach((stepId) => {
+      if (prev.has(stepId)) return; // לא הושלם הרגע — כבר היה מושלם קודם
+
+      const existingTimeout = collapseTimeoutsRef.current.get(stepId);
+      if (existingTimeout) clearTimeout(existingTimeout);
+
+      const timeoutId = setTimeout(() => {
+        collapseTimeoutsRef.current.delete(stepId);
+        // מקפלים רק אם השלב עדיין פתוח בפועל ועדיין מושלם בפועל כרגע —
+        // אם המשתמשת כבר סגרה אותו/פתחה שלב אחר, או ביטלה סימון בינתיים,
+        // לא נוגעים בכלום.
+        if (openStepIdRef.current === stepId && completedStepsRef.current.has(stepId)) {
+          onOpenStep(null);
+        }
+      }, AUTO_COLLAPSE_DELAY_MS);
+      collapseTimeoutsRef.current.set(stepId, timeoutId);
+    });
+  }, [progress.completedSteps, onOpenStep]);
+
+  useEffect(() => {
+    const timeouts = collapseTimeoutsRef.current;
+    return () => {
+      timeouts.forEach((id) => clearTimeout(id));
+      timeouts.clear();
+    };
+  }, []);
+
   const setRowRef = useCallback((id: number, el: HTMLLIElement | null) => {
     if (el) rowRefs.current.set(id, el);
     else rowRefs.current.delete(id);
@@ -110,34 +166,10 @@ export default function RoadmapSection({ progress, openStepId, onOpenStep }: Roa
 
   const { allStepsCompleted, hasAnyProgress, doneStepTasksCount, totalStepTasksCount } = progress;
 
-  // רגע הסיום מתנגן רק בעקבות סימון ידני של המשימה האחרונה שחסרה במסלול —
-  // לא בטעינת העמוד, לא בסנכרון מהענן ולא מבחירת יחידה ב"איפה כדאי לעשות?".
-  // לא נשמר בשום מקום: בביקור חוזר המקטע מוצג עם תמונת הסיום בלבד.
-  // finaleRun משמש גם כ-key, כך שסימון-מחדש אחרי ביטול מתחיל רצף חדש.
-  const [finaleRun, setFinaleRun] = useState(0);
-  const { completedStepTasks, toggleStepTask } = progress;
-  const handleToggleTask = useCallback(
-    (stepId: number, taskIndex: number) => {
-      const key = `${stepId}:${taskIndex}`;
-      if (!completedStepTasks.has(key)) {
-        const missing = missingStepTaskKeys(completedStepTasks);
-        if (missing.length === 1 && missing[0] === key) setFinaleRun((n) => n + 1);
-      }
-      toggleStepTask(stepId, taskIndex);
-    },
-    [completedStepTasks, toggleStepTask]
-  );
-
   // מקור האמת היחיד לסיום המסלול: אותו allStepsCompleted קיים מ-useJourneyProgress
   // (doneStepsCount === totalSteps, 7 השלבים הראשיים בלבד — לא כולל בדיקות).
   // כינוי שם בלבד לצורך קריאות, בלי state/מנגנון התקדמות חדש.
   const isJourneyComplete = allStepsCompleted;
-
-  // מסלול שכבר אינו מושלם (ביטול סימון) — מאפסים, כדי שהשלמה בדרך אחרת
-  // (סנכרון, בחירת יחידה) לא "תירש" רצף חגיגי ישן
-  useEffect(() => {
-    if (!isJourneyComplete) setFinaleRun(0);
-  }, [isJourneyComplete]);
 
   return (
     <div className="print-stack">
@@ -147,19 +179,15 @@ export default function RoadmapSection({ progress, openStepId, onOpenStep }: Roa
       <p className="sr-only" aria-live="polite">
         {isJourneyComplete ? JOURNEY_COMPLETE_ANNOUNCEMENT : ""}
       </p>
-      {/* כרטיס "הדבר הבא שלך" (NextActionCard) — Next Action דינמי, נגזר
-          מ-progress.nextAction בלבד (ראו useJourneyProgress.ts). קומפקטי
-          בכוונה: זהו כעת האלמנט הראשון באזור המסלול (נכנסים אליו ישירות
-          ממסך הפתיחה), ולכן לא מיועד "לדחוף" את הצ'קליסט רחוק מדי מטה. */}
-      <NextActionCard progress={progress} onGoToAction={goToNextAction} />
 
-      {/* כותרת הצ'קליסט — הכותרת, תגית ההתקדמות וכפתורי ההדפסה/האיפוס שהיו
-          בעבר בראש העמוד; עברו לכאן כדי לשמש ככותרת האזור של הצ'קליסט עצמו */}
-      <section className="mt-6 animate-fadeUp flex flex-col gap-3 sm:mt-8 sm:flex-row sm:items-start sm:justify-between">
+      {/* כותרת הצ'קליסט — scroll-mt-28 כדי שלחיצה על הלוגו (AppShell.tsx:
+          handleLogoClick) שגוללת לכאן תפצה על ה-header הקבוע, באותו דפוס
+          בדיוק כמו scroll-mt-28 הקיים על כל <li> ב-StepRow.tsx. */}
+      <section className="animate-fadeUp flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2
             id="roadmap-title"
-            className="font-sans text-xl font-extrabold tracking-tight text-ink sm:text-2xl"
+            className="scroll-mt-28 font-sans text-xl font-extrabold tracking-tight text-ink sm:text-2xl"
           >
             המסלול האישי שלך
           </h2>
@@ -175,10 +203,13 @@ export default function RoadmapSection({ progress, openStepId, onOpenStep }: Roa
           <span className="inline-flex items-center rounded-full bg-teal-50 px-3.5 py-1.5 text-sm font-bold text-teal-700 ring-1 ring-inset ring-teal-100">
             {doneStepTasksCount} מתוך {totalStepTasksCount} משימות הושלמו
           </span>
-          <PrintButton />
           {hasAnyProgress && <ResetButton onReset={progress.reset} />}
         </div>
       </section>
+
+      {/* "הדבר הבא שלך" — שורה קטנה ושקטה מתחת לכותרת המסלול (לא כרטיס גדול
+          ובולט כמו קודם), נגזרת מ-progress.nextAction בלבד. */}
+      <NextActionCard progress={progress} onGoToAction={goToNextAction} />
 
       {/* צ'קליסט השלבים */}
       <section className="mt-4 sm:mt-5" aria-label="צ׳קליסט תהליך הקפאת הביציות">
@@ -193,19 +224,20 @@ export default function RoadmapSection({ progress, openStepId, onOpenStep }: Roa
         <StepList
           openStepId={openStepId}
           completedStepTasks={progress.completedStepTasks}
-          onToggleTask={handleToggleTask}
+          onToggleTask={progress.toggleStepTask}
           onToggleExpand={toggleExpand}
           setRowRef={setRowRef}
           highlightedTaskKey={highlightedTaskKey}
         />
       </section>
 
-      {/* רגע הסיום — רק כשכל משימות המסלול מסומנות (mount/unmount מותנה:
-          ביטול סימון מסתיר אותו מיד). celebrate רק אחרי סימון ידני של המשימה
-          האחרונה בביקור הנוכחי; אחרת — תמונת הסיום בלבד, בלי גלילה וסרטון.
-          (CompletionCelebration/ScrollToCompletionHint הקודמים נשארו בקוד
-          בלי שימוש.) */}
-      {isJourneyComplete && <JourneyFinale key={finaleRun} celebrate={finaleRun > 0} />}
+      {/* מסך הסיום החגיגי — רק כשכל 7 השלבים הושלמו. mount/unmount מותנה
+          (לא רק הסתרה ב-CSS) בכוונה: אם משתמשת מבטלת סימון שלב אחרי
+          שסיימה, המסך והרמז נעלמים; אם היא משלימה שוב, ה-unmount/mount
+          המלא מאפס גם את מצב האנימציה הפנימי (useCelebrationTrigger),
+          כך שהרצף החגיגי יתנגן מחדש מההתחלה — נשקל כרצוי, לא כתקלה. */}
+      {isJourneyComplete && <ScrollToCompletionHint />}
+      {isJourneyComplete && <CompletionCelebration />}
     </div>
   );
 }

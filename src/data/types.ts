@@ -49,12 +49,45 @@ export interface JourneyStep {
   ctaPrompt?: string;
 }
 
+/** שורת מחיר בודדת בחלונית המידע של רכיב (ר' TestSubItemPriceInfo).
+ *  price מוצג רק כש-verification === "verified" — כשהיא "needs-verification"
+ *  אין להציג מספר בכלל (גם לא הישן), אלא רק את ה-note שמסביר שלא אומת. */
+export interface TestSubItemPriceRow {
+  name: string;
+  price?: string;
+  sourceLabel: string;
+  sourceUrl: string;
+  /** תאריך (YYYY-MM-DD) שבו אומת בפועל שהמחיר עדיין מופיע במקור */
+  checkedDate: string;
+  verification: "verified" | "needs-verification";
+  note?: string;
+}
+
+/** תוכן חלונית מידע "איפה אפשר לבצע וכמה זה עולה?" לרכיב ספציפי (כרגע רק AMH) */
+export interface TestSubItemPriceInfo {
+  /** גם הטקסט של הקישור הקטן וגם כותרת החלונית */
+  linkLabel: string;
+  intro: string;
+  rows: TestSubItemPriceRow[];
+  /** קישורי בדיקת זכאות נפרדים לכל קופה — לעולם לא טבלה אחת "לכולן" */
+  fundLinks: SourceLink[];
+}
+
 /** רכיב בודד במיני-הצ'קליסט של בדיקה (TestItem.subItems) */
 export interface TestSubItem {
   label: string;
   /** הנחיה ממוקדת לרכיב הספציפי הזה בלבד (למשל AMH לעומת FSH באותה קבוצה) —
    *  מוצגת רק כשיש בה תוכן ממשי; אין ברירת מחדל/נוסח גנרי כשאין הנחיה אמיתית */
   note?: string;
+  /** הסבר שני, נפרד מ-note — מוצג לצידו (לא מחליף אותו). כרגע רק AMH משתמש בזה */
+  secondaryNote?: string;
+  /** true = רכיב שלא נדרש מכל המשתמשות (כרגע רק AMH): לא נדרש כדי שהבדיקה
+   *  שאליה הוא שייך תיחשב "הושלמה" (ר' requiredSubIndexes/isTestDone ב-
+   *  useJourneyProgress.ts), וקיצור הדרך "סמני/בטלי הכול" (toggleTest) לא
+   *  נוגע בו כלל — כדי שאישה שלא נדרשה לבצע אותו לא תסמן אותו בטעות. */
+  optional?: boolean;
+  /** כשיש — מוצג קישור קטן ליד הרכיב שפותח חלונית מידע (מחיר/זכאות) */
+  priceInfo?: TestSubItemPriceInfo;
 }
 
 export interface TestItem {
