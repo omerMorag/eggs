@@ -10,6 +10,7 @@ import RoadmapSection from "@/components/sections/RoadmapSection";
 import TestsSection from "@/components/sections/TestsSection";
 import WhereToGoSection from "@/components/sections/WhereToGoSection";
 import MyChancesSection from "@/components/sections/MyChancesSection";
+import InjectionsSection from "@/components/sections/InjectionsSection";
 import GuidesSection from "@/components/sections/GuidesSection";
 import CostEstimatorSection from "@/components/sections/CostEstimatorSection";
 import StoriesSection from "@/components/sections/StoriesSection";
@@ -237,6 +238,7 @@ export default function AppShell() {
           {section === "stories" && <StoriesSection />}
           {section === "admin-stories" && <AdminStoriesSection />}
           {section === "guides" && <GuidesSection />}
+          {section === "injections" && <InjectionsSection />}
         </main>
 
         <DisclaimerFooter />
